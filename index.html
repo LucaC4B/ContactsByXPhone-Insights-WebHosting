@@ -1,26 +1,240 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Support Dashboard</title>
+    <style>
+        :root {
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+            --accent: #0a6ed1;
+            --accent-soft: #e8f1fb;
+            --text: #1c2733;
+            --text-muted: #6a7888;
+            --border: #e2e7ee;
+            --shadow: 0 1px 3px rgba(20, 40, 70, 0.08);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #1a1f26;
+                --card-bg: #232a33;
+                --accent: #4a9eea;
+                --accent-soft: #2a3744;
+                --text: #e6ebf1;
+                --text-muted: #97a3b3;
+                --border: #323b46;
+                --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .header-text h1 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .header-text p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 7px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .refresh-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .ticket-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 28px 24px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .ticket-icon {
+            flex-shrink: 0;
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ticket-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .ticket-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ticket-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+        }
+
+        .ticket-count {
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1.05;
+            color: var(--text);
+        }
+
+        .ticket-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .footer {
+            margin-top: auto;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 8px;
+        }
+    </style>
 </head>
-
 <body>
+    <div class="dashboard">
+        <div class="header">
+            <div class="header-text">
+                <h1 id="greeting">Support Dashboard</h1>
+                <p id="subtitle">Ihre aktuelle Arbeitslast im Ueberblick</p>
+            </div>
+            <button class="refresh-btn" id="refreshBtn" title="Daten aktualisieren">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Aktualisieren
+            </button>
+        </div>
 
-    <div class="card">
-        <div class="avatar" id="avatar"></div>
+        <div class="ticket-card">
+            <div class="ticket-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 9V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4a2 2 0 0 0 0 4v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4a2 2 0 0 0 0-4z"></path>
+                    <path d="M9 7v10"></path>
+                </svg>
+            </div>
+            <div class="ticket-info">
+                <span class="ticket-label">Tickets in Bearbeitung</span>
+                <span class="ticket-count" id="ticketCount">--</span>
+                <span class="ticket-sub" id="ticketSub">aktuell zugewiesene Vorgaenge</span>
+            </div>
+        </div>
 
-        <h2 id="name"></h2>
-        <small id="emailPrimary"></small>
-
-        <div class="section" id="emails"></div>
-        <div class="section" id="phones"></div>
+        <div class="footer" id="footer">Bereit</div>
     </div>
 
-    <script src="script.js"></script>
-</body>
+    <script>
+        // Placeholder fuer die Anzahl der Tickets in Bearbeitung.
+        // Hier spaeter den echten Wert aus dem Ticketsystem einsetzen.
+        const TICKET_COUNT_PLACEHOLDER = 7;
 
+        const greetingEl = document.getElementById("greeting");
+        const ticketCountEl = document.getElementById("ticketCount");
+        const footerEl = document.getElementById("footer");
+
+        function renderTicketCount(a_count) {
+            ticketCountEl.textContent = a_count;
+        }
+
+        function renderGreeting(a_user) {
+            if (a_user && a_user.displayName) {
+                greetingEl.textContent = `Hallo ${a_user.displayName}`;
+            }
+        }
+
+        function handleIncomingData(a_event) {
+            const user = a_event.data && a_event.data.user;
+            renderGreeting(user);
+            renderTicketCount(TICKET_COUNT_PLACEHOLDER);
+            footerEl.textContent = "Daten geladen";
+        }
+
+        function requestRefresh() {
+            window.parent.postMessage({ type: "refresh" }, "*");
+            footerEl.textContent = "Aktualisierung angefordert ...";
+        }
+
+        window.addEventListener("message", handleIncomingData);
+        document.getElementById("refreshBtn").addEventListener("click", requestRefresh);
+
+        // Initialwert anzeigen, falls noch keine Nachricht eingegangen ist.
+        renderTicketCount(TICKET_COUNT_PLACEHOLDER);
+    </script>
+</body>
 </html>
