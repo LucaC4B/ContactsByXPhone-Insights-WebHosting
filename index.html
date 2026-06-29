@@ -1,413 +1,638 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kontakt Dashboard</title>
-    <style>
-        :root {
-            --bg: #f4f6f9;
-            --card-bg: #ffffff;
-            --accent: #0a6ed1;
-            --accent-soft: #e8f1fb;
-            --success: #16a34a;
-            --text: #1c2733;
-            --text-muted: #6a7888;
-            --border: #e2e7ee;
-            --shadow: 0 1px 3px rgba(20, 40, 70, 0.08);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacts Insights</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #1a1f26;
-                --card-bg: #232a33;
-                --accent: #4a9eea;
-                --accent-soft: #2a3744;
-                --success: #34c759;
-                --text: #e6ebf1;
-                --text-muted: #97a3b3;
-                --border: #323b46;
-                --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            }
-        }
+  :root {
+    --bg:       #16181f;
+    --surface:  #1e2128;
+    --surface2: #262a34;
+    --accent:   #6c8aff;
+    --accent2:  #a78bfa;
+    --text:     #eef0f8;
+    --muted:    #7a7f94;
+    --border:   #2e3244;
+    --radius:   10px;
+  }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  html, body {
+    height: 100%;
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+  }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-        }
+  /* ── Layout ── */
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 148px;
+    grid-template-rows: auto 1fr;
+    gap: 10px;
+    padding: 12px;
+    height: 100vh;
+    width: 100vw;
+  }
 
-        body {
-            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+  /* ── Header: avatar + name ── */
+  #header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
 
-        .dashboard {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 18px;
-            gap: 14px;
-            overflow-y: auto;
-        }
+  #avatar-wrap {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border);
+  }
+  #avatar-wrap.hidden { display: none; }
 
-        /* --- Profil-Kopf --- */
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+  #avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
-        .avatar {
-            flex-shrink: 0;
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: var(--accent-soft);
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-            border: 2px solid var(--border);
-        }
+  #avatar-initials {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
 
-        .profile-info {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
+  #name-block { flex: 1; min-width: 0; }
 
-        .profile-name {
-            font-size: 18px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+  #contact-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.3px;
+  }
 
-        .profile-sub {
-            font-size: 13px;
-            color: var(--text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+  #contact-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
 
-        /* --- Karten --- */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-        }
+  #contact-type-badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 3px;
+  }
+  #contact-type-badge.hidden { display: none; }
 
-        .ticket-card {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+  #header.empty { display: none; }
 
-        .ticket-icon {
-            flex-shrink: 0;
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
-            background: var(--accent-soft);
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+  /* ── Contact details column ── */
+  #details {
+    grid-column: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+  }
 
-        .ticket-icon svg { width: 26px; height: 26px; }
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+  }
 
-        .ticket-label {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            font-weight: 600;
-        }
+  .section-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 7px;
+  }
 
-        .ticket-count {
-            font-size: 40px;
-            font-weight: 700;
-            line-height: 1.1;
-        }
+  .field-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-row:last-child { border-bottom: none; }
 
-        /* --- Aktionen --- */
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
+  .field-label {
+    font-size: 10px;
+    color: var(--muted);
+    width: 72px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
 
-        .btn {
-            flex: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: none;
-            border-radius: 10px;
-            padding: 13px 16px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: filter 0.15s, opacity 0.15s;
-        }
+  .field-value {
+    font-size: 12px;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+  }
 
-        .btn svg { width: 18px; height: 18px; }
+  .field-action {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    padding: 0;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+  }
+  .field-action:hover { opacity: 1; }
 
-        .btn-call {
-            background: var(--success);
-            color: #fff;
-        }
+  /* Empty state */
+  #empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+    color: var(--muted);
+  }
+  #empty-state svg { opacity: 0.3; }
+  #empty-state p { font-size: 12px; }
+  #empty-state.hidden { display: none; }
 
-        .btn-call:hover { filter: brightness(1.08); }
+  /* ── QR Code column ── */
+  #qr-column {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+  #qr-wrap {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
 
-        /* --- Karte / Maps --- */
-        .map-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 220px;
-        }
+  #qr-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6px;
+    display: block;
+    filter: invert(1) hue-rotate(200deg) brightness(1.1);
+  }
 
-        .map-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 14px;
-            font-size: 13px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
+  /* Placeholder blurred QR */
+  #qr-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+  }
+  #qr-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6px;
+    filter: blur(4px) invert(1) hue-rotate(200deg) brightness(0.7);
+    opacity: 0.4;
+  }
 
-        .map-header svg { width: 16px; height: 16px; flex-shrink: 0; }
+  /* Loading overlay */
+  #qr-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(22, 24, 31, 0.6);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
 
-        .map-frame-wrap {
-            flex: 1;
-            position: relative;
-            min-height: 200px;
-        }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid rgba(108,138,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
 
-        .map-frame-wrap iframe {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-            border-radius: 0 0 12px 12px;
-        }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-        .map-empty {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 13px;
-            padding: 24px;
-            text-align: center;
-        }
+  #qr-loading span {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
 
-        .hidden { display: none !important; }
-    </style>
+  #qr-label {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* Refresh btn */
+  #refresh-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.15s, border-color 0.15s;
+    width: 100%;
+    justify-content: center;
+  }
+  #refresh-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  #qr-column.hidden { display: none; }
+
+  .hidden { display: none !important; }
+</style>
 </head>
 <body>
-    <div class="dashboard">
 
-        <!-- Profil -->
-        <div class="profile">
-            <div class="avatar" id="avatar">?</div>
-            <div class="profile-info">
-                <span class="profile-name" id="profileName">Kein Kontakt geladen</span>
-                <span class="profile-sub" id="profileSub"></span>
-            </div>
-        </div>
+<div id="app">
+  <!-- Empty state -->
+  <div id="empty-state">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+    </svg>
+    <p>Kein Kontakt ausgewählt</p>
+  </div>
 
-        <!-- Tickets -->
-        <div class="card ticket-card">
-            <div class="ticket-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 9V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4a2 2 0 0 0 0 4v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4a2 2 0 0 0 0-4z"></path>
-                    <path d="M9 7v10"></path>
-                </svg>
-            </div>
-            <div>
-                <div class="ticket-label">Eroeffnete Tickets</div>
-                <div class="ticket-count" id="ticketCount">--</div>
-            </div>
-        </div>
-
-        <!-- Aktionen -->
-        <div class="actions">
-            <button class="btn btn-call" id="callBtn" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                </svg>
-                <span id="callLabel">Anrufen</span>
-            </button>
-        </div>
-
-        <!-- Google Maps -->
-        <div class="card map-section">
-            <div class="map-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                <span id="addressLabel">Keine Adresse verfuegbar</span>
-            </div>
-            <div class="map-frame-wrap" id="mapWrap">
-                <iframe id="mapFrame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
-            </div>
-            <div class="map-empty hidden" id="mapEmpty">Fuer diesen Kontakt liegt keine Adresse vor.</div>
-        </div>
-
+  <!-- Header -->
+  <div id="header" class="hidden">
+    <div id="avatar-wrap">
+      <img id="avatar-img" src="" alt="" onerror="this.style.display='none';document.getElementById('avatar-initials').style.display='flex'">
+      <div id="avatar-initials" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;"></div>
     </div>
+    <div id="name-block">
+      <div id="contact-name"></div>
+      <div id="contact-subtitle"></div>
+      <div id="contact-type-badge" class="hidden"></div>
+    </div>
+  </div>
 
-    <script>
-        const els = {
-            avatar: document.getElementById("avatar"),
-            name: document.getElementById("profileName"),
-            sub: document.getElementById("profileSub"),
-            ticket: document.getElementById("ticketCount"),
-            callBtn: document.getElementById("callBtn"),
-            callLabel: document.getElementById("callLabel"),
-            addressLabel: document.getElementById("addressLabel"),
-            mapWrap: document.getElementById("mapWrap"),
-            mapFrame: document.getElementById("mapFrame"),
-            mapEmpty: document.getElementById("mapEmpty")
-        };
+  <!-- Details -->
+  <div id="details" class="hidden"></div>
 
-        // Placeholder: zufaellige Anzahl bereits eroeffneter Tickets.
-        function randomTicketCount() {
-            return Math.floor(Math.random() * 50) + 1;
-        }
+  <!-- QR Column -->
+  <div id="qr-column" class="hidden">
+    <div id="qr-wrap">
+      <!-- Placeholder blurred QR (example pattern) -->
+      <div id="qr-placeholder">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=placeholder" alt="">
+      </div>
+      <!-- Real QR -->
+      <img id="qr-img" src="" alt="QR Code" class="hidden">
+      <!-- Loading overlay -->
+      <div id="qr-loading">
+        <div class="spinner"></div>
+        <span>Generiere QR…</span>
+      </div>
+    </div>
+    <div id="qr-label">Alle Kontaktdaten</div>
+    <button id="refresh-btn" onclick="sendRefresh()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+      </svg>
+      Aktualisieren
+    </button>
+  </div>
+</div>
 
-        function pickName(a_contact) {
-            const n = a_contact && a_contact.personal && a_contact.personal.name;
-            if (!n) return "";
-            return n.displayName || n.fullName ||
-                   [n.firstName, n.lastName].filter(Boolean).join(" ");
-        }
+<script>
+let currentContact = null;
 
-        function initials(a_name) {
-            const parts = a_name.trim().split(/\s+/).filter(Boolean);
-            if (parts.length === 0) return "?";
-            if (parts.length === 1) return parts[0].charAt(0);
-            return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
-        }
+/* ── Outgoing messages ─────────────────────────────── */
+function sendMsg(payload) {
+  window.parent.postMessage(payload, '*');
+}
+function sendRefresh() { sendMsg({ type: 'refresh' }); }
+function callNumber(n) { sendMsg({ type: 'callPhoneNumber', value: n }); }
+function openMail(e) { sendMsg({ type: 'sendEmail', value: e }); }
+function copyText(t) { sendMsg({ type: 'copyText', value: t }); }
 
-        function renderProfile(a_contact) {
-            const name = pickName(a_contact) || "Unbekannter Kontakt";
-            els.name.textContent = name;
+/* ── Helpers ────────────────────────────────────────── */
+function el(id) { return document.getElementById(id); }
 
-            const company = a_contact && a_contact.company;
-            els.sub.textContent = company
-                ? [company.employmentInfo, company.name].filter(Boolean).join(" - ")
-                : "";
+function show(id) { el(id).classList.remove('hidden'); }
+function hide(id) { el(id).classList.add('hidden'); }
 
-            const thumb = a_contact && a_contact.thumbnailUrl;
-            if (thumb) {
-                els.avatar.style.backgroundImage = `url("${thumb}")`;
-                els.avatar.style.backgroundSize = "cover";
-                els.avatar.style.backgroundPosition = "center";
-                els.avatar.textContent = "";
-            } else {
-                els.avatar.textContent = initials(name);
-            }
-        }
+function initials(name) {
+  if (!name) return '?';
+  return name.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('');
+}
 
-        function pickPhoneNumber(a_contact) {
-            const p = a_contact && a_contact.phoneNumbers;
-            if (!p) return "";
-            if (Array.isArray(p.work) && p.work.length > 0) return p.work[0];
-            return p.mobile || p.home || "";
-        }
+/* ── QR Code ────────────────────────────────────────── */
+function buildQRText(c) {
+  const lines = [];
 
-        function renderCallButton(a_contact) {
-            const number = pickPhoneNumber(a_contact);
-            if (!number) {
-                els.callBtn.disabled = true;
-                els.callLabel.textContent = "Keine Nummer";
-                return;
-            }
-            els.callBtn.disabled = false;
-            els.callLabel.textContent = `Anrufen ${number}`;
-            els.callBtn.onclick = () => {
-                window.parent.postMessage({ type: "callPhoneNumber", value: number }, "*");
-            };
-        }
+  // VCARD style plain text
+  const name = c.personal?.name?.fullName ||
+               [c.personal?.name?.firstName, c.personal?.name?.lastName].filter(Boolean).join(' ');
+  if (name)                         lines.push('Name: ' + name);
+  if (c.company?.name)              lines.push('Firma: ' + c.company.name);
+  if (c.company?.employmentInfo)    lines.push('Rolle: ' + c.company.employmentInfo);
+  if (c.company?.department)        lines.push('Abteilung: ' + c.company.department);
 
-        function buildAddress(a_contact) {
-            const c = a_contact || {};
-            const company = c.company && c.company.address;
-            const personal = c.personal && c.personal.address;
-            const src = pickAddressSource(company, personal);
-            if (!src) return "";
-            return [src.street, src.postalCode, src.city, src.country]
-                .filter(Boolean).join(", ");
-        }
+  const work = c.phoneNumbers?.work;
+  if (Array.isArray(work)) work.forEach(p => lines.push('Tel (Büro): ' + p));
+  if (c.phoneNumbers?.mobile)       lines.push('Mobil: ' + c.phoneNumbers.mobile);
+  if (c.phoneNumbers?.home)         lines.push('Privat: ' + c.phoneNumbers.home);
 
-        function pickAddressSource(a_company, a_personal) {
-            if (hasAddress(a_company)) return a_company;
-            if (hasAddress(a_personal)) return a_personal;
-            return null;
-        }
+  if (c.emails?.primary)            lines.push('E-Mail: ' + c.emails.primary);
+  const wEmails = c.emails?.work;
+  if (Array.isArray(wEmails)) wEmails.forEach(m => lines.push('E-Mail (B): ' + m));
 
-        function hasAddress(a_addr) {
-            return a_addr && (a_addr.street || a_addr.city || a_addr.postalCode);
-        }
+  const pa = c.personal?.address;
+  if (pa) {
+    const addr = [pa.street, pa.postalCode && pa.city ? pa.postalCode + ' ' + pa.city : pa.city, pa.country].filter(Boolean).join(', ');
+    if (addr) lines.push('Adresse: ' + addr);
+  }
+  const ca = c.company?.address;
+  if (ca) {
+    const addr = [ca.street, ca.postalCode && ca.city ? ca.postalCode + ' ' + ca.city : ca.city, ca.country].filter(Boolean).join(', ');
+    if (addr) lines.push('Firma Adresse: ' + addr);
+  }
 
-        function renderMap(a_contact) {
-            const address = buildAddress(a_contact);
-            if (!address) {
-                els.addressLabel.textContent = "Keine Adresse verfuegbar";
-                els.mapWrap.classList.add("hidden");
-                els.mapEmpty.classList.remove("hidden");
-                return;
-            }
-            els.addressLabel.textContent = address;
-            els.mapWrap.classList.remove("hidden");
-            els.mapEmpty.classList.add("hidden");
-            els.mapFrame.src =
-                `https://maps.google.com/maps?q=${encodeURIComponent(address)}&z=15&output=embed`;
-        }
+  if (c.company?.website)           lines.push('Web: ' + c.company.website);
+  if (c.personal?.birthday)         lines.push('Geb.: ' + c.personal.birthday);
 
-        function handleIncomingData(a_event) {
-            const contact = a_event.data && a_event.data.contact;
-            if (!contact) return;
-            renderProfile(contact);
-            renderCallButton(contact);
-            renderMap(contact);
-            els.ticket.textContent = randomTicketCount();
-        }
+  // custom fields
+  for (let i = 1; i <= 20; i++) {
+    const v = c.customFields?.['custom' + i];
+    if (v) lines.push('Custom' + i + ': ' + v);
+  }
 
-        window.addEventListener("message", handleIncomingData);
+  return lines.join('\n');
+}
 
-        // Startwert fuer die Ticket-Anzeige, bis Daten eintreffen.
-        els.ticket.textContent = randomTicketCount();
-    </script>
+function loadQR(contact) {
+  // Show loading overlay
+  hide('qr-img');
+  show('qr-loading');
+
+  const text = buildQRText(contact);
+  const encoded = encodeURIComponent(text);
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&ecc=M&data=${encoded}`;
+
+  const img = new Image();
+  img.onload = () => {
+    el('qr-img').src = url;
+    show('qr-img');
+    hide('qr-loading');
+    hide('qr-placeholder');
+  };
+  img.onerror = () => {
+    // Fallback: text QR code label
+    hide('qr-loading');
+    el('qr-label').textContent = 'QR nicht verfügbar';
+  };
+  img.src = url;
+}
+
+/* ── Section builder ────────────────────────────────── */
+function makeSection(title, fields) {
+  // fields: [{label, value, action?, actionLabel?}]
+  const visible = fields.filter(f => f.value != null && f.value !== '' && !(Array.isArray(f.value) && f.value.length === 0));
+  if (!visible.length) return null;
+
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  const t = document.createElement('div');
+  t.className = 'section-title';
+  t.textContent = title;
+  sec.appendChild(t);
+
+  visible.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'field-label';
+    lbl.textContent = f.label;
+
+    const val = document.createElement('div');
+    val.className = 'field-value';
+
+    // Handle arrays
+    const items = Array.isArray(f.value) ? f.value : [f.value];
+    items.forEach((v, i) => {
+      if (i > 0) val.appendChild(document.createElement('br'));
+      const span = document.createElement('span');
+      span.textContent = v;
+      val.appendChild(span);
+    });
+
+    row.appendChild(lbl);
+    row.appendChild(val);
+
+    // Action button
+    if (f.action) {
+      const btn = document.createElement('button');
+      btn.className = 'field-action';
+      btn.title = f.actionLabel || '';
+      btn.innerHTML = f.actionIcon || '';
+      // For arrays, use first item for action
+      const actionVal = Array.isArray(f.value) ? f.value[0] : f.value;
+      btn.onclick = () => f.action(actionVal);
+      row.appendChild(btn);
+    }
+
+    sec.appendChild(row);
+  });
+
+  return sec;
+}
+
+/* icons */
+const ICON_PHONE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.65 12 19.79 19.79 0 0 1 1.6 3.4 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.06 6.06l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+const ICON_MAIL  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>`;
+const ICON_COPY  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+
+/* ── Render contact ─────────────────────────────────── */
+function renderContact(c) {
+  currentContact = c;
+
+  hide('empty-state');
+  show('header');
+  show('details');
+  show('qr-column');
+
+  // ── Avatar
+  const thumbUrl = c.thumbnailUrl;
+  const fullName = c.personal?.name?.fullName ||
+                   [c.personal?.name?.firstName, c.personal?.name?.lastName].filter(Boolean).join(' ');
+
+  if (thumbUrl) {
+    el('avatar-img').src = thumbUrl;
+    el('avatar-img').style.display = 'block';
+    el('avatar-initials').style.display = 'none';
+  } else if (fullName) {
+    el('avatar-img').style.display = 'none';
+    el('avatar-initials').style.display = 'flex';
+    el('avatar-initials').textContent = initials(fullName);
+  } else {
+    el('avatar-wrap').classList.add('hidden');
+  }
+
+  // ── Name block
+  el('contact-name').textContent = fullName || '—';
+
+  const subtitleParts = [c.company?.employmentInfo, c.company?.name].filter(Boolean);
+  el('contact-subtitle').textContent = subtitleParts.join(' · ');
+
+  if (c.contactType) {
+    el('contact-type-badge').textContent = c.contactType;
+    el('contact-type-badge').classList.remove('hidden');
+  }
+
+  // ── Build sections
+  const container = el('details');
+  container.innerHTML = '';
+
+  // Phone
+  const phoneFields = [
+    { label: 'Büro', value: c.phoneNumbers?.work,   action: callNumber, actionIcon: ICON_PHONE, actionLabel: 'Anrufen' },
+    { label: 'Mobil', value: c.phoneNumbers?.mobile, action: callNumber, actionIcon: ICON_PHONE, actionLabel: 'Anrufen' },
+    { label: 'Privat', value: c.phoneNumbers?.home,  action: callNumber, actionIcon: ICON_PHONE, actionLabel: 'Anrufen' },
+    { label: 'Fax',  value: c.phoneNumbers?.faxNumbers, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' },
+  ];
+  const phoneSection = makeSection('Telefon', phoneFields);
+  if (phoneSection) container.appendChild(phoneSection);
+
+  // Email
+  const emailFields = [
+    { label: 'Primär', value: c.emails?.primary, action: openMail, actionIcon: ICON_MAIL, actionLabel: 'E-Mail senden' },
+    { label: 'Büro',  value: c.emails?.work,    action: openMail, actionIcon: ICON_MAIL, actionLabel: 'E-Mail senden' },
+  ];
+  const emailSection = makeSection('E-Mail', emailFields);
+  if (emailSection) container.appendChild(emailSection);
+
+  // Company
+  const compFields = [
+    { label: 'Firma',   value: c.company?.name },
+    { label: 'Rolle',   value: c.company?.employmentInfo },
+    { label: 'Abtlg.', value: c.company?.department },
+    { label: 'Web',     value: c.company?.website, action: (v) => copyText(v), actionIcon: ICON_COPY, actionLabel: 'Kopieren' },
+  ];
+  const compSection = makeSection('Unternehmen', compFields);
+  if (compSection) container.appendChild(compSection);
+
+  // Addresses
+  const pAddr = c.personal?.address;
+  if (pAddr) {
+    const addrLine = [pAddr.street, pAddr.postalCode && pAddr.city ? pAddr.postalCode + ' ' + pAddr.city : pAddr.city, pAddr.country].filter(Boolean).join(', ');
+    if (addrLine) {
+      const s = makeSection('Privatadresse', [{ label: 'Adresse', value: addrLine, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' }]);
+      if (s) container.appendChild(s);
+    }
+  }
+
+  const cAddr = c.company?.address;
+  if (cAddr) {
+    const addrLine = [cAddr.street, cAddr.postalCode && cAddr.city ? cAddr.postalCode + ' ' + cAddr.city : cAddr.city, cAddr.country].filter(Boolean).join(', ');
+    if (addrLine) {
+      const s = makeSection('Firmenadresse', [{ label: 'Adresse', value: addrLine, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' }]);
+      if (s) container.appendChild(s);
+    }
+  }
+
+  // Personal
+  const persFields = [
+    { label: 'Geb.', value: c.personal?.birthday },
+    { label: 'Titel', value: c.personal?.name?.title },
+  ];
+  const persSection = makeSection('Persönlich', persFields);
+  if (persSection) container.appendChild(persSection);
+
+  // Custom fields
+  const customFields = [];
+  for (let i = 1; i <= 20; i++) {
+    const v = c.customFields?.['custom' + i];
+    if (v) customFields.push({ label: 'Feld ' + i, value: v, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' });
+  }
+  const customSection = makeSection('Benutzerdefiniert', customFields);
+  if (customSection) container.appendChild(customSection);
+
+  // System info
+  const sysFields = [
+    { label: 'Quelle',  value: c.dataSource },
+    { label: 'App',     value: c.dbFields?.dbApplication },
+    { label: 'Version', value: c.dbFields?.dbAppVersion },
+    { label: 'DB',      value: c.dbFields?.dbDataBase },
+    { label: 'Typ',     value: c.dbFields?.dbEntityType },
+    { label: 'ID',      value: c.dbFields?.dbNativeId, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' },
+  ];
+  const sysSection = makeSection('System', sysFields);
+  if (sysSection) container.appendChild(sysSection);
+
+  // ── QR
+  loadQR(c);
+}
+
+/* ── Message listener ───────────────────────────────── */
+window.addEventListener('message', event => {
+  const { contact, user } = event.data || {};
+  if (contact) renderContact(contact);
+});
+</script>
 </body>
 </html>
