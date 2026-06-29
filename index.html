@@ -6,143 +6,167 @@
 <title>Weather Insight</title>
 <style>
 html,body{
-margin:0;
-width:100%;
-height:100%;
-font-family:Arial,sans-serif;
-background:#fff;
-overflow:hidden;
+    margin:0;
+    width:100%;
+    height:100%;
+    font-family:Segoe UI,Arial,sans-serif;
+    background:#fff;
+    overflow:hidden;
 }
 #app{
-width:100%;
-height:100%;
-display:flex;
-align-items:center;
-justify-content:center;
-position:relative;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+    text-align:center;
 }
 #debug{
-position:absolute;
-top:6px;
-right:6px;
-border:none;
-background:#f3f3f3;
-border-radius:6px;
-padding:4px 8px;
-cursor:pointer;
-font-size:11px;
-}
-#content{
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-text-align:center;
-gap:4px;
+    position:absolute;
+    top:6px;
+    right:6px;
+    width:22px;
+    height:22px;
+    border:none;
+    background:#eee;
+    border-radius:4px;
+    cursor:pointer;
+    font-size:12px;
 }
 #emoji{
-font-size:72px;
-line-height:1;
+    font-size:68px;
+    line-height:1;
 }
 #temp{
-font-size:42px;
-font-weight:700;
-line-height:1;
+    font-size:38px;
+    font-weight:700;
+    line-height:1.1;
 }
 #city{
-font-size:16px;
-opacity:.7;
-line-height:1.2;
-max-width:90%;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
+    font-size:15px;
+    color:#666;
+    margin-top:2px;
+}
+#message{
+    padding:16px;
+    font-size:16px;
+    text-align:center;
 }
 </style>
 </head>
 <body>
 <div id="app">
-<button id="debug">Debug</button>
-<div id="content">
-<div id="emoji">💫</div>
-<div id="temp">--°</div>
-<div id="city">Nur Gott kennt das Schicksahl 💫</div>
-</div>
+    <button id="debug">🐞</button>
+    <div id="emoji"></div>
+    <div id="temp"></div>
+    <div id="city"></div>
+    <div id="message" style="display:none;"></div>
 </div>
 
 <script>
-let lastResponse=null;
-
-function getEmoji(temp){
-if(temp>=40)return"🙏";
-if(temp>=35)return"🌋";
-if(temp>=31)return"🔥";
-if(temp>=25)return"☀️";
-if(temp>=15)return"🥳";
-if(temp>=0)return"😳";
-return"🧊";
-}
-
-function sendCopy(text){
-window.parent.postMessage({type:"copyText",value:text},"*");
-}
-
-document.getElementById("debug").addEventListener("click",()=>{
-sendCopy(JSON.stringify(lastResponse||{error:"Keine Daten"},null,2));
-});
-
-async function loadWeather(contact){
-try{
-const parts=[
-contact?.personal?.address?.city,
-contact?.company?.address?.city,
-contact?.personal?.address?.country,
-contact?.company?.address?.country
-].filter(Boolean);
-
-const query=parts.join(" ").trim();
-
-if(!query){
-document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
-return;
-}
-
-const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=de&format=json`);
-const geo=await geoRes.json();
-
-if(!geo.results?.length){
-document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
-return;
-}
-
-const place=geo.results[0];
-
-const weatherRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&daily=temperature_2m_max&forecast_days=1&timezone=auto`);
-const weather=await weatherRes.json();
-
-lastResponse={
-location:place,
-weather
+let debugData={
+    geocodingUrl:"",
+    geocodingResponse:null,
+    weatherUrl:"",
+    weatherResponse:null
 };
 
-const temp=Math.round(weather?.daily?.temperature_2m_max?.[0]);
-
-if(Number.isNaN(temp)){
-document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
-return;
+function streetWithoutNumber(street){
+    if(!street)return"";
+    return street.replace(/\s+\d+.*$/,"").trim();
 }
 
-document.getElementById("emoji").textContent=getEmoji(temp);
-document.getElementById("temp").textContent=temp+"°";
-document.getElementById("city").textContent=place.name||query;
-}catch{
-document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
+function emoji(temp){
+    if(temp>=40)return"🙏";
+    if(temp>=35)return"🌋";
+    if(temp>=31)return"🔥";
+    if(temp>=25)return"☀️";
+    if(temp>=15)return"🥳";
+    if(temp>=0)return"😳";
+    return"🧊";
 }
+
+function showFallback(){
+    document.getElementById("emoji").style.display="none";
+    document.getElementById("temp").style.display="none";
+    document.getElementById("city").style.display="none";
+    const m=document.getElementById("message");
+    m.style.display="block";
+    m.textContent="Nur Gott kennt das Schicksahl 💫";
 }
+
+async function loadWeather(contact){
+    const addr=contact.personal?.address||{};
+    let search=addr.city?.trim();
+
+    if(!search){
+        search=streetWithoutNumber(addr.street||"");
+    }
+
+    if(!search){
+        showFallback();
+        return;
+    }
+
+    debugData.geocodingUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(search)}`;
+
+    const geoRes=await fetch(debugData.geocodingUrl);
+    const geoJson=await geoRes.json();
+
+    debugData.geocodingResponse=geoJson;
+
+    if(!geoJson.results||!geoJson.results.length){
+        showFallback();
+        return;
+    }
+
+    const place=geoJson.results[0];
+
+    debugData.weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&daily=temperature_2m_max&forecast_days=1&timezone=auto`;
+
+    const weatherRes=await fetch(debugData.weatherUrl);
+    const weatherJson=await weatherRes.json();
+
+    debugData.weatherResponse=weatherJson;
+
+    const temp=weatherJson.daily.temperature_2m_max[0];
+
+    document.getElementById("emoji").textContent=emoji(temp);
+    document.getElementById("temp").textContent=Math.round(temp)+"°";
+    document.getElementById("city").textContent=place.name;
+}
+
+document.getElementById("debug").onclick=()=>{
+    const text=
+`=== Geocoding URL ===
+${debugData.geocodingUrl}
+
+=== Geocoding Response ===
+${JSON.stringify(debugData.geocodingResponse,null,2)}
+
+=== Weather URL ===
+${debugData.weatherUrl}
+
+=== Weather Response ===
+${JSON.stringify(debugData.weatherResponse,null,2)}`;
+
+    window.parent.postMessage({
+        type:"copyText",
+        value:text
+    },"*");
+};
 
 window.addEventListener("message",event=>{
-const contact=event.data?.contact||{};
-loadWeather(contact);
+    const contact=event.data.contact;
+
+    if(!contact){
+        showFallback();
+        return;
+    }
+
+    loadWeather(contact).catch(showFallback);
 });
 </script>
 </body>
