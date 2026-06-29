@@ -1,173 +1,182 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Weather Insight</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insights Panel</title>
 <style>
 html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    font-family:Segoe UI,Arial,sans-serif;
-    background:#fff;
-    overflow:hidden;
+margin:0;
+padding:0;
+width:100%;
+height:100%;
+background:#0b0b0b;
+font-family:Arial, sans-serif;
+color:#fff;
+overflow:hidden;
 }
 #app{
-    width:100%;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    position:relative;
-    text-align:center;
+width:100%;
+height:100%;
+position:relative;
 }
-#debug{
-    position:absolute;
-    top:6px;
-    right:6px;
-    width:22px;
-    height:22px;
-    border:none;
-    background:#eee;
-    border-radius:4px;
-    cursor:pointer;
-    font-size:12px;
+#topbar{
+position:absolute;
+top:0;
+right:0;
+padding:10px;
+z-index:10;
 }
-#emoji{
-    font-size:68px;
-    line-height:1;
+button{
+background:#222;
+color:#fff;
+border:0;
+padding:6px 10px;
+cursor:pointer;
+font-size:12px;
 }
-#temp{
-    font-size:38px;
-    font-weight:700;
-    line-height:1.1;
+#grill{
+position:absolute;
+bottom:0;
+width:100%;
+height:40%;
+background:#111;
+display:flex;
+align-items:center;
+justify-content:center;
 }
-#city{
-    font-size:15px;
-    color:#666;
-    margin-top:2px;
+#grill.on{
+background:radial-gradient(#333,#000);
 }
-#message{
-    padding:16px;
-    font-size:16px;
-    text-align:center;
+#plate{
+width:200px;
+height:20px;
+background:#444;
+border-radius:10px;
+position:relative;
+}
+#contactImg{
+width:80px;
+height:80px;
+border-radius:50%;
+position:absolute;
+top:-70px;
+left:50%;
+transform:translateX(-50%);
+object-fit:cover;
+}
+.sizzle{
+animation:sizzle 0.2s infinite alternate;
+}
+@keyframes sizzle{
+0%{transform:translateX(-50%) rotate(-2deg)}
+100%{transform:translateX(-50%) rotate(2deg)}
+}
+.flip{
+animation:flip 2s infinite;
+}
+@keyframes flip{
+0%{transform:translateX(-50%) rotateY(0deg)}
+50%{transform:translateX(-50%) rotateY(180deg)}
+100%{transform:translateX(-50%) rotateY(360deg)}
+}
+#info{
+position:absolute;
+top:20px;
+left:20px;
+right:20px;
+font-size:14px;
+line-height:1.4;
 }
 </style>
 </head>
 <body>
 <div id="app">
-    <button id="debug">🐞</button>
-    <div id="emoji"></div>
-    <div id="temp"></div>
-    <div id="city"></div>
-    <div id="message" style="display:none;"></div>
+<div id="topbar">
+<button onclick="copyAll()">Copy</button>
 </div>
-
+<div id="info"></div>
+<div id="grill">
+<div id="plate">
+<img id="contactImg" src="" />
+</div>
+</div>
+</div>
 <script>
-let debugData={
-    geocodingUrl:"",
-    geocodingResponse:null,
-    weatherUrl:"",
-    weatherResponse:null
-};
+let lastEvent=null
+let logs=[]
+let contactData=null
+let userData=null
+let heat=0
 
-function streetWithoutNumber(street){
-    if(!street)return"";
-    return street.replace(/\s+\d+.*$/,"").trim();
+window.addEventListener('message', async event=>{
+logs.push(event.data)
+contactData=event.data.contact
+userData=event.data.user
+await run()
+})
+
+async function run(){
+if(!contactData)return
+let cities=[]
+if(contactData.personal&&contactData.personal.address&&contactData.personal.address.city)cities.push(contactData.personal.address.city)
+if(contactData.company&&contactData.company.address&&contactData.company.address.city)cities.push(contactData.company.address.city)
+cities=cities.filter(Boolean)
+
+let temp=null
+let lat=null
+let lon=null
+
+for(let city of cities){
+try{
+let geo=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city))
+let g=await geo.json()
+if(g&&g.results&&g.results.length){
+lat=g.results[0].latitude
+lon=g.results[0].longitude
+let w=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&daily=temperature_2m_max&timezone=auto')
+let wj=await w.json()
+if(wj&&wj.daily&&wj.daily.temperature_2m_max){
+temp=Math.max(...wj.daily.temperature_2m_max)
+break
+}
+}
+}catch(e){}
 }
 
-function emoji(temp){
-    if(temp>=40)return"🙏";
-    if(temp>=35)return"🌋";
-    if(temp>=31)return"🔥";
-    if(temp>=25)return"☀️";
-    if(temp>=15)return"🥳";
-    if(temp>=0)return"😳";
-    return"🧊";
+let grill=document.getElementById('grill')
+let img=document.getElementById('contactImg')
+let info=document.getElementById('info')
+
+if(!temp){
+grill.classList.remove('on')
+img.src=contactData.thumbnailUrl||''
+info.innerText='No data'
+return
 }
 
-function showFallback(){
-    document.getElementById("emoji").style.display="none";
-    document.getElementById("temp").style.display="none";
-    document.getElementById("city").style.display="none";
-    const m=document.getElementById("message");
-    m.style.display="block";
-    m.textContent="Nur Gott kennt das Schicksahl 💫";
+grill.classList.add('on')
+img.src=contactData.thumbnailUrl||''
+
+let level='rare'
+if(temp>=40)level='well done'
+else if(temp>=30)level='medium well'
+else if(temp>=17)level='medium'
+
+heat=temp
+info.innerText='Heat: '+temp+'° - '+level
+
+img.classList.add('sizzle')
+img.classList.add('flip')
 }
 
-async function loadWeather(contact){
-    const addr=contact.personal?.address||{};
-    let search=addr.city?.trim();
-
-    if(!search){
-        search=streetWithoutNumber(addr.street||"");
-    }
-
-    if(!search){
-        showFallback();
-        return;
-    }
-
-    debugData.geocodingUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(search)}`;
-
-    const geoRes=await fetch(debugData.geocodingUrl);
-    const geoJson=await geoRes.json();
-
-    debugData.geocodingResponse=geoJson;
-
-    if(!geoJson.results||!geoJson.results.length){
-        showFallback();
-        return;
-    }
-
-    const place=geoJson.results[0];
-
-    debugData.weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&daily=temperature_2m_max&forecast_days=1&timezone=auto`;
-
-    const weatherRes=await fetch(debugData.weatherUrl);
-    const weatherJson=await weatherRes.json();
-
-    debugData.weatherResponse=weatherJson;
-
-    const temp=weatherJson.daily.temperature_2m_max[0];
-
-    document.getElementById("emoji").textContent=emoji(temp);
-    document.getElementById("temp").textContent=Math.round(temp)+"°";
-    document.getElementById("city").textContent=place.name;
+function copyAll(){
+let payload={
+type:'copyText',
+value:JSON.stringify({logs:logs,contact:contactData,user:userData})
 }
-
-document.getElementById("debug").onclick=()=>{
-    const text=
-`=== Geocoding URL ===
-${debugData.geocodingUrl}
-
-=== Geocoding Response ===
-${JSON.stringify(debugData.geocodingResponse,null,2)}
-
-=== Weather URL ===
-${debugData.weatherUrl}
-
-=== Weather Response ===
-${JSON.stringify(debugData.weatherResponse,null,2)}`;
-
-    window.parent.postMessage({
-        type:"copyText",
-        value:text
-    },"*");
-};
-
-window.addEventListener("message",event=>{
-    const contact=event.data.contact;
-
-    if(!contact){
-        showFallback();
-        return;
-    }
-
-    loadWeather(contact).catch(showFallback);
-});
+navigator.clipboard.writeText(JSON.stringify(payload))
+}
 </script>
 </body>
 </html>
