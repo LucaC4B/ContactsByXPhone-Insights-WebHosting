@@ -1,466 +1,811 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contact Doneness</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Insights Panel</title>
 <style>
+  /* Theme tokens - adapts to light/dark host */
   :root {
-    --bg: #1a1410;
-    --bg2: #241b14;
-    --ember: #ff5a1f;
-    --ember-bright: #ffb43c;
-    --grate: #3a3a3e;
-    --grate-hi: #56565c;
-    --text: #f4ece0;
-    --muted: #9a8d7d;
-    --rare: #d24b4b;
-    --medrare: #d9744a;
-    --medium: #d99a4a;
-    --medwell: #b58a52;
-    --well: #6e5236;
-    --ash: #2a221c;
+    --bg: #ffffff;
+    --surface: #f6f7f9;
+    --surface-2: #eef0f3;
+    --border: #e2e5ea;
+    --text: #1d2330;
+    --text-muted: #6b7280;
+    --text-faint: #9aa1ad;
+    --accent: #2f6fed;
+    --accent-soft: #e8f0ff;
+    --good: #1f9d57;
+    --warn: #c77700;
+    --danger: #d23b3b;
+    --radius: 10px;
+    --gap: 10px;
   }
- 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
- 
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --surface: #1c2026;
+      --surface-2: #232830;
+      --border: #2c323b;
+      --text: #e7eaef;
+      --text-muted: #9aa3b0;
+      --text-faint: #6b7480;
+      --accent: #5a8dff;
+      --accent-soft: #1d2a44;
+      --good: #3fbd76;
+      --warn: #e0a14a;
+      --danger: #ec6363;
+    }
+  }
+
+  * { box-sizing: border-box; }
   html, body {
-    width: 100%;
+    margin: 0;
+    padding: 0;
     height: 100%;
-    overflow: hidden;
+    width: 100%;
   }
- 
   body {
-    background:
-      radial-gradient(120% 80% at 50% 110%, rgba(255,90,31,0.10), transparent 60%),
-      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    background: var(--bg);
     color: var(--text);
-    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  #app { padding: 12px; min-height: 100%; }
+
+  /* ---- Header / identity ---- */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .avatar {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    overflow: hidden;
+    user-select: none;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .identity { min-width: 0; flex: 1 1 auto; }
+  .identity .name {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .identity .sub {
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .obscured-tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    color: var(--warn);
+    border: 1px solid var(--warn);
+    border-radius: 4px;
+    padding: 0 4px;
+    vertical-align: middle;
+  }
+  .header-actions { flex: 0 0 auto; display: flex; gap: 4px; }
+  .icon-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  /* ---- Role badge / switcher ---- */
+  .role-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .switcher { display: none; gap: 4px; }
+  .switcher.show { display: inline-flex; }
+  .switcher button {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    border-radius: 7px;
+    padding: 3px 8px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .switcher button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ---- Primary action buttons ---- */
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: var(--gap);
+    margin-bottom: 14px;
+  }
+  .action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 9px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, transform .05s;
+  }
+  .action:hover { background: var(--surface-2); }
+  .action:active { transform: scale(.98); }
+  .action.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .action.primary:hover { filter: brightness(1.06); }
+  .action svg { width: 15px; height: 15px; }
+
+  /* ---- Sections ---- */
+  .section { margin-bottom: 14px; }
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-faint);
+    font-weight: 700;
+    margin: 0 0 7px;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap);
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 10px;
+  }
+  .stat .label {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat .value {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .stat .value.small { font-size: 13px; }
+
+  /* key-value rows (address, fields) */
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: var(--text-muted); flex: 0 0 auto; }
+  .kv .v {
+    text-align: right;
+    font-weight: 500;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .copy-inline {
+    border: none;
+    background: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+  }
+  .copy-inline:hover { color: var(--accent); }
+  .copy-inline svg { width: 13px; height: 13px; }
+
+  /* list items (contracts, tickets) */
+  .list-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 10px;
+    margin-bottom: 8px;
+  }
+  .list-item:last-child { margin-bottom: 0; }
+  .list-item .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .list-item .title { font-weight: 600; }
+  .list-item .meta { color: var(--text-muted); font-size: 11.5px; margin-top: 2px; }
+
+  .pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.good { background: rgba(31,157,87,.14); color: var(--good); }
+  .pill.warn { background: rgba(199,119,0,.16); color: var(--warn); }
+  .pill.danger { background: rgba(210,59,59,.14); color: var(--danger); }
+  .pill.neutral { background: var(--surface-2); color: var(--text-muted); }
+
+  .note {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+
+  /* ---- Empty state ---- */
+  .empty {
+    height: 100%;
+    min-height: 70vh;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    padding: 14px 16px 12px;
-    position: relative;
-  }
- 
-  /* ---- Header ---- */
-  .head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    flex: 0 0 auto;
-  }
-  .title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ember-bright);
-  }
-  .title small {
-    display: block;
-    font-size: 9px;
-    letter-spacing: 0.18em;
-    color: var(--muted);
-    font-weight: 400;
-    margin-top: 2px;
-  }
-  .copy-btn {
-    flex: 0 0 auto;
-    appearance: none;
-    border: 1px solid #4a3a2c;
-    background: #2c2118;
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    padding: 5px 9px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all .15s ease;
-    font-family: inherit;
-  }
-  .copy-btn:hover { color: var(--text); border-color: var(--ember); }
-  .copy-btn:active { transform: translateY(1px); }
-  .copy-btn:focus-visible { outline: 2px solid var(--ember-bright); outline-offset: 2px; }
- 
-  /* ---- Doneness label ---- */
-  .verdict {
-    flex: 0 0 auto;
-    text-align: center;
-    margin: 6px 0 2px;
-    min-height: 44px;
-  }
-  .doneness {
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    line-height: 1.05;
-  }
-  .temp {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-  .temp b { color: var(--text); font-weight: 600; }
- 
-  /* ---- Grill stage ---- */
-  .stage {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-    position: relative;
-  }
-  svg.grill { width: 100%; height: 100%; max-height: 260px; display: block; }
- 
-  .flame { transform-origin: center bottom; }
-  .grill-on .flame { animation: flicker 0.45s ease-in-out infinite alternate; }
-  @keyframes flicker {
-    from { opacity: .55; transform: scaleY(0.86) translateY(2px); }
-    to   { opacity: 1;   transform: scaleY(1.08) translateY(-1px); }
-  }
- 
-  .smoke { opacity: 0; }
-  .grill-on .smoke { animation: rise 2.6s linear infinite; }
-  @keyframes rise {
-    0%   { opacity: 0;   transform: translateY(0) scale(0.6); }
-    25%  { opacity: .35; }
-    100% { opacity: 0;   transform: translateY(-46px) scale(1.5); }
-  }
- 
-  /* steak (the profile picture) flip */
-  .steak-grp { transform-origin: center center; }
-  .grill-on .steak-grp { animation: flip 3.4s ease-in-out infinite; }
-  @keyframes flip {
-    0%, 38%   { transform: rotateY(0deg) translateY(0); }
-    44%       { transform: rotateY(0deg) translateY(-26px); }
-    50%       { transform: rotateY(180deg) translateY(-26px); }
-    56%, 100% { transform: rotateY(180deg) translateY(0); }
-  }
-  .steak-grp { transform-style: preserve-3d; }
- 
-  .sizzle { opacity: 0; }
-  .grill-on .sizzle { animation: sizzle 0.7s ease-out infinite; }
-  @keyframes sizzle {
-    0%   { opacity: 0; transform: translateY(0) scale(0.4); }
-    40%  { opacity: .9; }
-    100% { opacity: 0; transform: translateY(-22px) scale(1); }
-  }
- 
-  .spatula {
-    opacity: 0;
-    transform-origin: center;
-  }
-  .grill-on .spatula { animation: spat 3.4s ease-in-out infinite; }
-  @keyframes spat {
-    0%, 36%   { opacity: 0; transform: translate(40px, 20px) rotate(-20deg); }
-    44%       { opacity: 1; transform: translate(0px, -6px) rotate(-8deg); }
-    52%       { opacity: 1; transform: translate(0px, -6px) rotate(-8deg); }
-    60%, 100% { opacity: 0; transform: translate(40px, 20px) rotate(-20deg); }
-  }
- 
-  @media (prefers-reduced-motion: reduce) {
-    .flame, .smoke, .steak-grp, .sizzle, .spatula { animation: none !important; }
-    .steak-grp { transform: rotateY(0deg) !important; }
-    .flame { opacity: .9; }
-  }
- 
-  /* ---- Footer / location ---- */
-  .foot {
-    flex: 0 0 auto;
-    text-align: center;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    min-height: 16px;
-    padding-top: 4px;
-  }
-  .foot b { color: var(--ember-bright); font-weight: 600; }
- 
-  .status {
-    flex: 1 1 auto;
-    display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    padding: 0 20px;
-    line-height: 1.5;
+    color: var(--text-faint);
+    padding: 24px;
   }
+  .empty svg { width: 42px; height: 42px; margin-bottom: 12px; opacity: .6; }
+  .empty .title { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+  .empty .desc { font-size: 12px; margin-top: 4px; max-width: 230px; }
+
   .hidden { display: none !important; }
+
+  /* toast for copy feedback */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s, transform .18s;
+    z-index: 50;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
-<body class="grill-off">
- 
-  <div class="head">
-<div class="title">On the Grill<small id="who"></small></div>
-<button class="copy-btn" id="copyLog" title="Copy debug log">⧉ Log</button>
-</div>
- 
-  <div class="verdict hidden" id="verdict">
-<div class="doneness" id="donenessText">—</div>
-<div class="temp" id="tempText"></div>
-</div>
- 
-  <div class="status" id="status">Waiting for contact…</div>
- 
-  <div class="stage hidden" id="stage">
-<svg class="grill" id="grillSvg" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<defs>
-<clipPath id="steakClip"><circle cx="160" cy="120" r="38"/></clipPath>
-<radialGradient id="emberGrad" cx="50%" cy="100%" r="80%">
-<stop offset="0%" stop-color="#ffcf5e"/>
-<stop offset="45%" stop-color="#ff5a1f"/>
-<stop offset="100%" stop-color="#7a1d05"/>
-</radialGradient>
-<linearGradient id="legGrad" x1="0" y1="0" x2="0" y2="1">
-<stop offset="0%" stop-color="#4a4a50"/>
-<stop offset="100%" stop-color="#202024"/>
-</linearGradient>
-</defs>
- 
-      <!-- legs -->
-<rect x="58" y="170" width="9" height="58" rx="3" fill="url(#legGrad)"/>
-<rect x="253" y="170" width="9" height="58" rx="3" fill="url(#legGrad)"/>
- 
-      <!-- grill body / firebox -->
-<ellipse cx="160" cy="178" rx="120" ry="26" fill="#15110d"/>
-<rect x="40" y="120" width="240" height="62" rx="14" fill="#2c2a2e"/>
-<ellipse cx="160" cy="120" rx="120" ry="30" fill="#3a383d"/>
-<ellipse cx="160" cy="120" rx="110" ry="25" fill="#100d0a" id="fireboxInner"/>
- 
-      <!-- embers (glow when on) -->
-<g id="embers">
-<ellipse cx="160" cy="122" rx="100" ry="20" fill="url(#emberGrad)" opacity="0" id="emberGlow"/>
-</g>
- 
-      <!-- flames -->
-<g id="flames">
-<path class="flame" d="M120 124 q-7 -22 4 -34 q-2 16 9 20 q8 -10 3 -24 q14 14 7 34 z" fill="#ff7a1f"/>
-<path class="flame" d="M160 122 q-8 -26 5 -40 q-3 18 10 22 q9 -12 3 -28 q16 16 8 40 z" fill="#ffae3c" style="animation-delay:.15s"/>
-<path class="flame" d="M200 124 q-7 -22 4 -34 q-2 16 9 20 q8 -10 3 -24 q14 14 7 34 z" fill="#ff7a1f" style="animation-delay:.3s"/>
-</g>
- 
-      <!-- grate bars (over the food) -->
-<g stroke="var(--grate)" stroke-width="4" stroke-linecap="round" opacity="0.85">
-<line x1="70" y1="108" x2="250" y2="108"/>
-<line x1="64" y1="120" x2="256" y2="120"/>
-<line x1="70" y1="132" x2="250" y2="132"/>
-</g>
- 
-      <!-- smoke -->
-<g id="smokeGroup" fill="#cfc6ba">
-<circle class="smoke" cx="135" cy="96" r="7" style="animation-delay:0s"/>
-<circle class="smoke" cx="170" cy="92" r="9" style="animation-delay:.9s"/>
-<circle class="smoke" cx="190" cy="98" r="6" style="animation-delay:1.7s"/>
-</g>
- 
-      <!-- sizzle sparks -->
-<g id="sizzleGroup" fill="#ffe08a">
-<circle class="sizzle" cx="138" cy="112" r="2.5" style="animation-delay:.1s"/>
-<circle class="sizzle" cx="182" cy="116" r="2"   style="animation-delay:.45s"/>
-<circle class="sizzle" cx="160" cy="108" r="2.5" style="animation-delay:.7s"/>
-</g>
- 
-      <!-- the steak = profile picture -->
-<g class="steak-grp" id="steakGrp">
-<ellipse cx="160" cy="122" rx="42" ry="34" fill="#000" opacity="0.35"/>
-<circle cx="160" cy="120" r="40" fill="#5b3a22" id="steakBase"/>
-<image id="steakImg" x="122" y="82" width="76" height="76" clip-path="url(#steakClip)" preserveAspectRatio="xMidYMid slice"/>
-<!-- sear / browning overlay, opacity driven by JS -->
-<circle cx="160" cy="120" r="38" fill="#1d0e04" opacity="0" id="searOverlay" clip-path="url(#steakClip)"/>
-<!-- grill marks -->
-<g clip-path="url(#steakClip)" stroke="#1a0c03" stroke-width="4" opacity="0" id="grillMarks">
-<line x1="128" y1="104" x2="192" y2="104"/>
-<line x1="124" y1="122" x2="196" y2="122"/>
-<line x1="128" y1="140" x2="192" y2="140"/>
-</g>
-<circle cx="160" cy="120" r="40" fill="none" stroke="#3a2415" stroke-width="3"/>
-</g>
- 
-      <!-- spatula (slides in during flip) -->
-<g class="spatula" id="spatula">
-<rect x="150" y="150" width="60" height="9" rx="2" fill="#c9ccd2"/>
-<rect x="205" y="150" width="40" height="5" rx="2.5" fill="#6b4a2e"/>
-</g>
-</svg>
-</div>
- 
-  <div class="foot hidden" id="foot"></div>
- 
+<body>
+  <div id="app">
+    <!-- Empty state (shown until a contact arrives) -->
+    <div id="empty" class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/>
+      </svg>
+      <div class="title">Kein Kontakt ausgewaehlt</div>
+      <div class="desc">Waehlen Sie einen Kontakt aus, um die Insights anzuzeigen.</div>
+    </div>
+
+    <!-- Content (filled on message) -->
+    <div id="content" class="hidden"></div>
+  </div>
+
+  <div id="toast"></div>
+
 <script>
-(function () {
-  "use strict";
- 
-  // ---- debug log of everything sent / received ----
-  const log = { input: null, received: [], sent: [], weather: [] };
- 
-  function send(msg) {
-    log.sent.push({ t: new Date().toISOString(), msg });
-    try { window.parent.postMessage(msg, "*"); } catch (e) {}
+"use strict";
+
+// ------------------------------------------------------------------
+// Outgoing messages to the host (clipboard, refresh, email, call)
+// ------------------------------------------------------------------
+function postToHost(a_payload) {
+  window.parent.postMessage(a_payload, "*");
+}
+function copyText(a_value) {
+  if (!a_value) return;
+  postToHost({ type: "copyText", value: String(a_value) });
+  showToast("Kopiert");
+}
+function sendEmail(a_value) {
+  if (a_value) postToHost({ type: "sendEmail", value: String(a_value) });
+}
+function callPhoneNumber(a_value) {
+  if (a_value) postToHost({ type: "callPhoneNumber", value: String(a_value) });
+}
+function requestRefresh() {
+  postToHost({ type: "refresh" });
+}
+
+// ------------------------------------------------------------------
+// Role detection - based on the CURRENT USER's department
+// ------------------------------------------------------------------
+var ROLES = {
+  sales:   { key: "sales",   label: "Vertrieb" },
+  hr:      { key: "hr",      label: "Personal (HR)" },
+  support: { key: "support", label: "Support" }
+};
+
+function normalizeRole(a_department) {
+  var d = String(a_department || "").trim().toLowerCase();
+  if (!d) return null;
+  if (/sales|vertrieb|verkauf/.test(d)) return "sales";
+  if (/\bhr\b|human|personal/.test(d)) return "hr";
+  if (/support|helpdesk|service|kundendienst/.test(d)) return "support";
+  return null;
+}
+
+// ------------------------------------------------------------------
+// Deterministic fictional data (stable per contact)
+// ------------------------------------------------------------------
+function hashString(a_str) {
+  var h = 2166136261 >>> 0;
+  for (var i = 0; i < a_str.length; i++) {
+    h ^= a_str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
- 
-  const $ = id => document.getElementById(id);
- 
-  // ---------- doneness scale ----------
-  // >40 well done … <17 rare
-  function doneness(temp) {
-    if (temp == null || isNaN(temp)) return null;
-    if (temp >= 40) return { name: "Well Done",     color: "var(--well)",    sear: 0.78, marks: 0.9 };
-    if (temp >= 33) return { name: "Medium Well",    color: "var(--medwell)", sear: 0.55, marks: 0.75 };
-    if (temp >= 25) return { name: "Medium",         color: "var(--medium)",  sear: 0.38, marks: 0.6 };
-    if (temp >= 17) return { name: "Medium Rare",    color: "var(--medrare)", sear: 0.20, marks: 0.4 };
-    return                  { name: "Rare",          color: "var(--rare)",    sear: 0.08, marks: 0.2 };
+  return h >>> 0;
+}
+function makeRng(a_seed) {
+  var a = a_seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function pick(a_rng, a_arr) { return a_arr[Math.floor(a_rng() * a_arr.length)]; }
+function between(a_rng, a_min, a_max) { return Math.floor(a_rng() * (a_max - a_min + 1)) + a_min; }
+
+function seedForContact(a_contact) {
+  var id = a_contact.entryId
+        || a_contact.entryDn
+        || getFullName(a_contact)
+        || (a_contact.emails && a_contact.emails.primary)
+        || "anon";
+  return hashString(String(id));
+}
+
+// ------------------------------------------------------------------
+// Formatting helpers
+// ------------------------------------------------------------------
+var EUR = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+var NUM = new Intl.NumberFormat("de-DE");
+
+function fmtDate(a_date) {
+  try { return a_date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }); }
+  catch (e) { return ""; }
+}
+function dateFromDayOffset(a_baseYear, a_dayOffset) {
+  var d = new Date(a_baseYear, 0, 1);
+  d.setDate(d.getDate() + a_dayOffset);
+  return d;
+}
+function esc(a_str) {
+  return String(a_str == null ? "" : a_str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function has(a_val) {
+  if (a_val == null) return false;
+  if (Array.isArray(a_val)) return a_val.length > 0;
+  return String(a_val).trim().length > 0;
+}
+
+// ------------------------------------------------------------------
+// Contact field accessors (defensive - fields are not guaranteed)
+// ------------------------------------------------------------------
+function getFullName(a_contact) {
+  var p = (a_contact.personal && a_contact.personal.name) || {};
+  if (has(p.displayName)) return p.displayName;
+  if (has(p.fullName)) return p.fullName;
+  var parts = [p.firstName, p.lastName].filter(has);
+  if (parts.length) return parts.join(" ");
+  return a_contact.personal && a_contact.personal.name && p.title ? p.title : "";
+}
+function getInitials(a_name) {
+  var parts = String(a_name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+function firstWorkPhone(a_contact) {
+  var pn = a_contact.phoneNumbers || {};
+  if (Array.isArray(pn.work) && pn.work.length) return pn.work[0];
+  return null;
+}
+function primaryPhone(a_contact) {
+  var pn = a_contact.phoneNumbers || {};
+  return firstWorkPhone(a_contact) || pn.mobile || pn.home || null;
+}
+function primaryEmail(a_contact) {
+  var e = a_contact.emails || {};
+  if (has(e.primary)) return e.primary;
+  if (Array.isArray(e.work) && e.work.length) return e.work[0];
+  return null;
+}
+
+// ------------------------------------------------------------------
+// SVG icon set
+// ------------------------------------------------------------------
+var ICON = {
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 6l9 6 9-6"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>',
+  badge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.3 3.1-5 7-5s7 1.7 7 5"/></svg>'
+};
+
+// ------------------------------------------------------------------
+// Rendering
+// ------------------------------------------------------------------
+var STATE = { contact: null, user: null, role: null, roleResolved: false };
+
+function render() {
+  var emptyEl = document.getElementById("empty");
+  var contentEl = document.getElementById("content");
+
+  if (!STATE.contact) {
+    emptyEl.classList.remove("hidden");
+    contentEl.classList.add("hidden");
+    return;
   }
- 
-  // ---------- gather candidate cities from the contact ----------
-  function collectCities(contact) {
-    const out = [];
-    const add = (city, label) => { if (city && String(city).trim()) out.push({ city: String(city).trim(), label }); };
-    try {
-      if (contact.company && contact.company.address) add(contact.company.address.city, "Company");
-      if (contact.personal && contact.personal.address) add(contact.personal.address.city, "Home");
-    } catch (e) {}
-    // de-dupe by city name
-    const seen = new Set();
-    return out.filter(c => { const k = c.city.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  emptyEl.classList.add("hidden");
+  contentEl.classList.remove("hidden");
+
+  var c = STATE.contact;
+  var html = renderHeader(c)
+           + renderRoleBar()
+           + renderActions(c)
+           + renderRoleSection(c);
+
+  contentEl.innerHTML = html;
+  wireDelegatedClicks(contentEl);
+}
+
+function renderHeader(a_contact) {
+  var name = getFullName(a_contact);
+  var p = (a_contact.personal && a_contact.personal.name) || {};
+  var subParts = [];
+  if (has(a_contact.company && a_contact.company.employmentInfo)) subParts.push(a_contact.company.employmentInfo);
+  if (has(a_contact.company && a_contact.company.department)) subParts.push(a_contact.company.department);
+  else if (has(a_contact.company && a_contact.company.name)) subParts.push(a_contact.company.name);
+
+  var avatar;
+  if (has(a_contact.thumbnailUrl)) {
+    avatar = '<div class="avatar"><img alt="" src="' + esc(a_contact.thumbnailUrl) + '" onerror="this.parentNode.textContent=\'' + esc(getInitials(name)) + '\'"/></div>';
+  } else {
+    avatar = '<div class="avatar">' + esc(getInitials(name)) + '</div>';
   }
- 
-  async function geocode(city) {
-    const url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(city) + "&count=1&language=en&format=json";
-    const r = await fetch(url);
-    const j = await r.json();
-    log.weather.push({ step: "geocode", city, result: j });
-    if (j && j.results && j.results.length) {
-      const g = j.results[0];
-      return { lat: g.latitude, lon: g.longitude, name: g.name, country: g.country };
-    }
-    return null;
+
+  var obscured = a_contact.isObscured ? '<span class="obscured-tag">maskiert</span>' : "";
+  var title = has(p.title) ? esc(p.title) + " " : "";
+
+  return ''
+    + '<div class="header">'
+    +   avatar
+    +   '<div class="identity">'
+    +     '<div class="name">' + title + esc(name || "Unbekannt") + obscured + '</div>'
+    +     (subParts.length ? '<div class="sub">' + esc(subParts.join(" · ")) + '</div>' : '')
+    +   '</div>'
+    +   '<div class="header-actions">'
+    +     '<button class="icon-btn" title="Aktualisieren" data-act="refresh">' + ICON.refresh + '</button>'
+    +   '</div>'
+    + '</div>';
+}
+
+function renderRoleBar() {
+  var label = STATE.role ? ROLES[STATE.role].label : "Unbekannt";
+  var badge = '<span class="role-badge">' + ICON.badge + 'Ansicht: ' + esc(label) + '</span>';
+
+  // The switcher is only shown when the user's department could not be resolved,
+  // so the panel is never blank for the operator.
+  var showSwitcher = !STATE.role || !STATE.roleResolved;
+  var switcher = ''
+    + '<span class="switcher' + (showSwitcher ? ' show' : '') + '">'
+    + Object.keys(ROLES).map(function (k) {
+        return '<button data-role="' + k + '" class="' + (STATE.role === k ? 'active' : '') + '">' + esc(ROLES[k].label) + '</button>';
+      }).join('')
+    + '</span>';
+
+  var hint = STATE.roleResolved
+    ? ''
+    : '<span>Abteilung des Benutzers nicht erkannt - bitte Ansicht waehlen:</span>';
+
+  return '<div class="role-bar">' + badge + hint + switcher + '</div>';
+}
+
+function renderActions(a_contact) {
+  var phone = primaryPhone(a_contact);
+  var email = primaryEmail(a_contact);
+  var btns = [];
+
+  if (has(phone)) {
+    btns.push('<button class="action primary" data-act="call" data-value="' + esc(phone) + '">' + ICON.phone + 'Anrufen</button>');
   }
- 
-  async function getMaxTemp(lat, lon) {
-    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
-                "&daily=temperature_2m_max&forecast_days=1&timezone=auto";
-    const r = await fetch(url);
-    const j = await r.json();
-    log.weather.push({ step: "forecast", lat, lon, result: j });
-    if (j && j.daily && j.daily.temperature_2m_max && j.daily.temperature_2m_max.length) {
-      return j.daily.temperature_2m_max[0];
-    }
-    return null;
+  if (has(email)) {
+    btns.push('<button class="action" data-act="email" data-value="' + esc(email) + '">' + ICON.mail + 'E-Mail</button>');
   }
- 
-  // ---------- render ----------
-  function turnGrillOn(temp, place) {
-    const d = doneness(temp);
-    document.body.classList.remove("grill-off");
-    document.body.classList.add("grill-on");
- 
-    $("status").classList.add("hidden");
-    $("stage").classList.remove("hidden");
-    $("verdict").classList.remove("hidden");
-    $("foot").classList.remove("hidden");
- 
-    $("emberGlow").setAttribute("opacity", "1");
-    $("donenessText").textContent = d.name;
-    $("donenessText").style.color = d.color;
-    $("tempText").innerHTML = "Max temp <b>" + Math.round(temp) + "°C</b> today";
- 
-    $("searOverlay").setAttribute("opacity", d.sear);
-    $("grillMarks").setAttribute("opacity", d.marks);
-    $("steakBase").setAttribute("fill", d.color);
- 
-    $("foot").innerHTML = "Cooking in <b>" + place.name + "</b>" + (place.country ? ", " + place.country : "");
+  if (has(phone)) {
+    btns.push('<button class="action" data-act="copy" data-value="' + esc(phone) + '">' + ICON.copy + 'Nummer</button>');
   }
- 
-  function turnGrillOff(reason) {
-    document.body.classList.remove("grill-on");
-    document.body.classList.add("grill-off");
-    $("stage").classList.add("hidden");
-    $("verdict").classList.add("hidden");
-    $("foot").classList.add("hidden");
-    $("status").classList.remove("hidden");
-    $("status").textContent = reason || "Grill is cold — no location to cook with.";
-    $("emberGlow").setAttribute("opacity", "0");
+  if (!btns.length) return '';
+  return '<div class="actions">' + btns.join('') + '</div>';
+}
+
+function renderRoleSection(a_contact) {
+  switch (STATE.role) {
+    case "sales":   return renderSales(a_contact);
+    case "hr":      return renderHr(a_contact);
+    case "support": return renderSupport(a_contact);
+    default:        return renderContactBasics(a_contact);
   }
- 
-  function setPhoto(contact) {
-    const url = contact && contact.thumbnailUrl;
-    if (url) {
-      $("steakImg").setAttribute("href", url);
-      $("steakImg").setAttribute("xlink:href", url);
-    } else {
-      // no photo: keep the meaty disc, hide image layer
-      $("steakImg").setAttribute("href", "");
-    }
-  }
- 
-  function setWho(contact, user) {
-    let name = "";
-    try {
-      name = (contact.personal && contact.personal.name && contact.personal.name.displayName)
-          || (contact.personal && contact.personal.name && contact.personal.name.fullName)
-          || (contact.company && contact.company.name) || "";
-    } catch (e) {}
-    $("who").textContent = name ? name : "";
-  }
- 
-  async function cook(contact, user) {
-    setWho(contact, user);
-    setPhoto(contact);
- 
-    const cities = collectCities(contact);
-    if (!cities.length) {
-      turnGrillOff("Grill is cold — this contact has no city on file.");
-      return;
-    }
- 
-    $("status").textContent = "Lighting the grill…";
- 
-    for (const c of cities) {
-      try {
-        const geo = await geocode(c.city);
-        if (!geo) continue;
-        const temp = await getMaxTemp(geo.lat, geo.lon);
-        if (temp == null) continue;
-        turnGrillOn(temp, geo);
-        return;
-      } catch (e) {
-        log.weather.push({ step: "error", city: c.city, error: String(e) });
-      }
-    }
-    turnGrillOff("Grill is cold — couldn't reach the weather service.");
-  }
- 
-  // ---------- message wiring ----------
-  window.addEventListener("message", event => {
-    const data = event.data || {};
-    log.received.push({ t: new Date().toISOString(), data });
-    if (!data.contact && !data.user) return;
-    log.input = data;
-    const contact = data.contact || {};
-    const user = data.user || {};
-    cook(contact, user);
+}
+
+// ---- Building blocks ----
+function statGrid(a_stats) {
+  var cells = a_stats.filter(function (s) { return has(s.value); }).map(function (s) {
+    return '<div class="stat"><div class="label">' + esc(s.label) + '</div>'
+         + '<div class="value' + (s.small ? ' small' : '') + '">' + esc(s.value) + '</div></div>';
   });
- 
-  // ---------- copy log button ----------
-  $("copyLog").addEventListener("click", () => {
-    const text = JSON.stringify(log, null, 2);
-    send({ type: "copyText", value: text });
-    const b = $("copyLog");
-    const old = b.textContent;
-    b.textContent = "✓ Copied";
-    setTimeout(() => { b.textContent = old; }, 1400);
+  if (!cells.length) return '';
+  return '<div class="stat-grid">' + cells.join('') + '</div>';
+}
+function kvRows(a_rows) {
+  var out = a_rows.filter(function (r) { return has(r.v); }).map(function (r) {
+    var copy = r.copy ? '<button class="copy-inline" data-act="copy" data-value="' + esc(r.v) + '" title="Kopieren">' + ICON.copy + '</button>' : '';
+    return '<div class="kv"><span class="k">' + esc(r.k) + '</span><span class="v">' + esc(r.v) + copy + '</span></div>';
   });
- 
-  // ask host for data on load
-  send({ type: "refresh" });
-})();
+  if (!out.length) return '';
+  return out.join('');
+}
+function sectionWrap(a_title, a_body) {
+  if (!has(a_body)) return '';
+  return '<div class="section"><div class="section-title">' + esc(a_title) + '</div>' + a_body + '</div>';
+}
+function pill(a_text, a_kind) { return '<span class="pill ' + a_kind + '">' + esc(a_text) + '</span>'; }
+
+function fictionNote() { return '<div class="note">Demo-Daten - deterministisch je Kontakt erzeugt.</div>'; }
+
+// ---- Sales view ----
+function renderSales(a_contact) {
+  var rng = makeRng(seedForContact(a_contact) ^ 0x5A1E5);
+  var tier = pick(rng, ["Bronze", "Silber", "Gold", "Platin"]);
+  var revenue = between(rng, 8, 240) * 5000;
+  var pipeline = between(rng, 2, 40) * 5000;
+  var openDeals = between(rng, 0, 8);
+  var winRate = between(rng, 35, 92);
+  var lastContact = fmtDate(dateFromDayOffset(2026, -between(rng, 1, 80)));
+
+  var stats = sectionWrap("Vertriebskennzahlen", statGrid([
+    { label: "Jahresumsatz", value: EUR.format(revenue) },
+    { label: "Pipeline", value: EUR.format(pipeline) },
+    { label: "Offene Deals", value: NUM.format(openDeals) },
+    { label: "Win-Rate", value: winRate + " %" },
+    { label: "Account-Stufe", value: tier, small: true },
+    { label: "Letzter Kontakt", value: lastContact, small: true }
+  ]));
+
+  var n = between(rng, 1, 3);
+  var statuses = [
+    { t: "Aktiv", k: "good" }, { t: "Verlaengerung faellig", k: "warn" }, { t: "In Verhandlung", k: "neutral" }
+  ];
+  var items = [];
+  for (var i = 0; i < n; i++) {
+    var st = pick(rng, statuses);
+    var val = between(rng, 5, 120) * 1000;
+    var num = "VTR-" + between(rng, 10000, 99999);
+    var renew = fmtDate(dateFromDayOffset(2026, between(rng, 20, 400)));
+    items.push(''
+      + '<div class="list-item">'
+      +   '<div class="row"><span class="title">' + esc(num) + '</span>' + pill(st.t, st.k) + '</div>'
+      +   '<div class="meta">' + EUR.format(val) + ' · Verlaengerung: ' + renew + '</div>'
+      + '</div>');
+  }
+  var contracts = sectionWrap("Vertraege", items.join(''));
+
+  return stats + contracts + fictionNote();
+}
+
+// ---- HR view ----
+function renderHr(a_contact) {
+  var rng = makeRng(seedForContact(a_contact) ^ 0x4D21);
+  var empId = "EMP-" + between(rng, 100000, 999999);
+  var userId = "uid-" + between(rng, 1000, 9999);
+  var startDate = fmtDate(dateFromDayOffset(2015 + between(rng, 0, 9), between(rng, 0, 360)));
+  var permanent = rng() > 0.45;
+  var endDate = permanent ? "unbefristet" : fmtDate(dateFromDayOffset(2026, between(rng, 40, 520)));
+  var salary = between(rng, 36, 145) * 1000;
+  var vacTotal = pick(rng, [28, 30]);
+  var vacLeft = between(rng, 0, vacTotal);
+
+  // Address only from real contact data - shown only when present.
+  var addr = (a_contact.personal && a_contact.personal.address) || {};
+  var addrBody = kvRows([
+    { k: "Strasse", v: addr.street },
+    { k: "PLZ / Ort", v: [addr.postalCode, addr.city].filter(has).join(" ") },
+    { k: "Land", v: addr.country }
+  ]);
+
+  var employment = sectionWrap("Beschaeftigung", kvRows([
+    { k: "Mitarbeiter-ID", v: empId, copy: true },
+    { k: "Benutzer-ID", v: userId, copy: true },
+    { k: "Eintritt", v: startDate },
+    { k: "Vertragsende", v: endDate }
+  ]));
+
+  var comp = sectionWrap("Verguetung & Urlaub", statGrid([
+    { label: "Jahresgehalt", value: EUR.format(salary) },
+    { label: "Resturlaub", value: vacLeft + " / " + vacTotal + " Tage", small: true }
+  ]));
+
+  var address = sectionWrap("Privatadresse", addrBody);
+
+  return employment + comp + address + fictionNote();
+}
+
+// ---- Support view ----
+function renderSupport(a_contact) {
+  var rng = makeRng(seedForContact(a_contact) ^ 0x7A99);
+  var openTickets = between(rng, 0, 6);
+  var sla = pick(rng, ["Standard", "Premium", "Enterprise"]);
+  var csat = between(rng, 60, 99);
+  var channel = pick(rng, ["Telefon", "E-Mail", "Teams-Chat"]);
+
+  var stats = sectionWrap("Support-Status", statGrid([
+    { label: "Offene Tickets", value: NUM.format(openTickets) },
+    { label: "SLA-Stufe", value: sla, small: true },
+    { label: "Zufriedenheit", value: csat + " %" },
+    { label: "Bevorzugter Kanal", value: channel, small: true }
+  ]));
+
+  var subjects = [
+    "Login fehlgeschlagen", "Anruf bricht ab", "Praesenz nicht synchron",
+    "Outlook-Add-in fehlt", "Rufnummer falsch angezeigt", "Voicemail nicht zustellbar"
+  ];
+  var st = openTickets > 0
+    ? { t: "Offen", k: openTickets > 3 ? "danger" : "warn" }
+    : { t: "Geschlossen", k: "good" };
+  var ticketNo = "INC-" + between(rng, 100000, 999999);
+  var subj = pick(rng, subjects);
+  var when = fmtDate(dateFromDayOffset(2026, -between(rng, 0, 30)));
+  var lastTicket = sectionWrap("Letztes Ticket", ''
+    + '<div class="list-item">'
+    +   '<div class="row"><span class="title">' + esc(ticketNo) + '</span>' + pill(st.t, st.k) + '</div>'
+    +   '<div class="meta">' + esc(subj) + ' · ' + when + '</div>'
+    + '</div>');
+
+  return stats + lastTicket + fictionNote();
+}
+
+// ---- Fallback: plain contact basics (no recognised role) ----
+function renderContactBasics(a_contact) {
+  var addr = (a_contact.company && a_contact.company.address) || {};
+  var rows = kvRows([
+    { k: "Firma", v: a_contact.company && a_contact.company.name },
+    { k: "Abteilung", v: a_contact.company && a_contact.company.department },
+    { k: "Position", v: a_contact.company && a_contact.company.employmentInfo },
+    { k: "Telefon", v: primaryPhone(a_contact), copy: true },
+    { k: "E-Mail", v: primaryEmail(a_contact), copy: true },
+    { k: "Ort", v: [addr.postalCode, addr.city].filter(has).join(" ") }
+  ]);
+  return sectionWrap("Kontakt", rows);
+}
+
+// ------------------------------------------------------------------
+// Event wiring
+// ------------------------------------------------------------------
+function wireDelegatedClicks(a_root) {
+  a_root.querySelectorAll("[data-act]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var act = el.getAttribute("data-act");
+      var value = el.getAttribute("data-value");
+      if (act === "call") callPhoneNumber(value);
+      else if (act === "email") sendEmail(value);
+      else if (act === "copy") copyText(value);
+      else if (act === "refresh") requestRefresh();
+    });
+  });
+  a_root.querySelectorAll("[data-role]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      STATE.role = el.getAttribute("data-role");
+      render();
+    });
+  });
+}
+
+var toastTimer = null;
+function showToast(a_text) {
+  var t = document.getElementById("toast");
+  t.textContent = a_text;
+  t.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1400);
+}
+
+// ------------------------------------------------------------------
+// Inbound message from host
+// ------------------------------------------------------------------
+window.addEventListener("message", function (event) {
+  var data = event.data || {};
+  if (!data || (!data.contact && !data.user)) return;
+
+  if (data.contact) STATE.contact = data.contact;
+  if (data.user) STATE.user = data.user;
+
+  var resolved = STATE.user ? normalizeRole(STATE.user.department) : null;
+  if (resolved) {
+    STATE.role = resolved;
+    STATE.roleResolved = true;
+  } else if (!STATE.role) {
+    STATE.role = "sales"; // sensible default until the operator picks
+    STATE.roleResolved = false;
+  }
+
+  render();
+});
+
+// Initial paint (empty state until the host sends data)
+render();
 </script>
 </body>
 </html>
