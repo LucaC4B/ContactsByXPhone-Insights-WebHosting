@@ -3,636 +3,211 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contacts Insights</title>
+<title>Wetter Insights</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  :root {
-    --bg:       #16181f;
-    --surface:  #1e2128;
-    --surface2: #262a34;
-    --accent:   #6c8aff;
-    --accent2:  #a78bfa;
-    --text:     #eef0f8;
-    --muted:    #7a7f94;
-    --border:   #2e3244;
-    --radius:   10px;
-  }
-
-  html, body {
-    height: 100%;
-    width: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
-    overflow: hidden;
-  }
-
-  /* ── Layout ── */
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 148px;
-    grid-template-rows: auto 1fr;
-    gap: 10px;
-    padding: 12px;
-    height: 100vh;
+  body {
     width: 100vw;
-  }
-
-  /* ── Header: avatar + name ── */
-  #header {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  #avatar-wrap {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--surface2);
+    height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--border);
-  }
-  #avatar-wrap.hidden { display: none; }
-
-  #avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  #avatar-initials {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: -0.5px;
-  }
-
-  #name-block { flex: 1; min-width: 0; }
-
-  #contact-name {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-    white-space: nowrap;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     overflow: hidden;
-    text-overflow: ellipsis;
-    letter-spacing: -0.3px;
   }
 
-  #contact-subtitle {
-    font-size: 11px;
-    color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 2px;
-  }
-
-  #contact-type-badge {
-    display: inline-block;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: 20px;
-    margin-top: 3px;
-  }
-  #contact-type-badge.hidden { display: none; }
-
-  #header.empty { display: none; }
-
-  /* ── Contact details column ── */
-  #details {
-    grid-column: 1;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-right: 4px;
-  }
-
-  .section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
-  }
-
-  .section-title {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 7px;
-  }
-
-  .field-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    padding: 3px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .field-row:last-child { border-bottom: none; }
-
-  .field-label {
-    font-size: 10px;
-    color: var(--muted);
-    width: 72px;
-    flex-shrink: 0;
-    padding-top: 1px;
-  }
-
-  .field-value {
-    font-size: 12px;
-    color: var(--text);
-    flex: 1;
-    min-width: 0;
-    word-break: break-word;
-  }
-
-  .field-action {
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--accent);
-    padding: 0;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    opacity: 0.7;
-    transition: opacity 0.15s;
-  }
-  .field-action:hover { opacity: 1; }
-
-  /* Empty state */
-  #empty-state {
-    grid-column: 1 / -1;
+  .widget {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    gap: 8px;
-    color: var(--muted);
-  }
-  #empty-state svg { opacity: 0.3; }
-  #empty-state p { font-size: 12px; }
-  #empty-state.hidden { display: none; }
-
-  /* ── QR Code column ── */
-  #qr-column {
-    grid-column: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  #qr-wrap {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-
-  #qr-img {
+    gap: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    padding: 6px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .emoji {
+    font-size: clamp(48px, 14vw, 80px);
+    line-height: 1;
+    margin-bottom: 4px;
     display: block;
-    filter: invert(1) hue-rotate(200deg) brightness(1.1);
   }
 
-  /* Placeholder blurred QR */
-  #qr-placeholder {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface);
-  }
-  #qr-placeholder img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 6px;
-    filter: blur(4px) invert(1) hue-rotate(200deg) brightness(0.7);
-    opacity: 0.4;
+  .temp {
+    font-size: clamp(32px, 10vw, 56px);
+    font-weight: 700;
+    line-height: 1;
+    color: #1a1a1a;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
   }
 
-  /* Loading overlay */
-  #qr-loading {
-    position: absolute;
-    inset: 0;
+  .city {
+    font-size: clamp(11px, 3.5vw, 15px);
+    color: #666;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
+  }
+
+  .loading {
+    font-size: 13px;
+    color: #999;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    background: rgba(22, 24, 31, 0.6);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
   }
 
   .spinner {
-    width: 28px;
-    height: 28px;
-    border: 2.5px solid rgba(108,138,255,0.2);
-    border-top-color: var(--accent);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e0e0e0;
+    border-top-color: #999;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  #qr-loading span {
-    font-size: 9px;
-    color: var(--muted);
-    letter-spacing: 0.03em;
-  }
-
-  #qr-label {
-    font-size: 9px;
-    color: var(--muted);
+  .fallback {
+    font-size: clamp(12px, 3.5vw, 15px);
+    color: #888;
     text-align: center;
-    line-height: 1.4;
+    padding: 8px;
+    line-height: 1.5;
   }
 
-  /* Refresh btn */
-  #refresh-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 10px;
-    padding: 5px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: color 0.15s, border-color 0.15s;
-    width: 100%;
-    justify-content: center;
+  @media (prefers-color-scheme: dark) {
+    .temp { color: #f0f0f0; }
+    .city { color: #aaa; }
+    .loading { color: #777; }
+    .fallback { color: #777; }
+    .spinner { border-color: #444; border-top-color: #888; }
   }
-  #refresh-btn:hover { color: var(--text); border-color: var(--accent); }
-
-  #qr-column.hidden { display: none; }
-
-  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-
-<div id="app">
-  <!-- Empty state -->
-  <div id="empty-state">
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-    </svg>
-    <p>Kein Kontakt ausgewählt</p>
-  </div>
-
-  <!-- Header -->
-  <div id="header" class="hidden">
-    <div id="avatar-wrap">
-      <img id="avatar-img" src="" alt="" onerror="this.style.display='none';document.getElementById('avatar-initials').style.display='flex'">
-      <div id="avatar-initials" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;"></div>
-    </div>
-    <div id="name-block">
-      <div id="contact-name"></div>
-      <div id="contact-subtitle"></div>
-      <div id="contact-type-badge" class="hidden"></div>
-    </div>
-  </div>
-
-  <!-- Details -->
-  <div id="details" class="hidden"></div>
-
-  <!-- QR Column -->
-  <div id="qr-column" class="hidden">
-    <div id="qr-wrap">
-      <!-- Placeholder blurred QR (example pattern) -->
-      <div id="qr-placeholder">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=placeholder" alt="">
-      </div>
-      <!-- Real QR -->
-      <img id="qr-img" src="" alt="QR Code" class="hidden">
-      <!-- Loading overlay -->
-      <div id="qr-loading">
-        <div class="spinner"></div>
-        <span>Generiere QR…</span>
-      </div>
-    </div>
-    <div id="qr-label">Alle Kontaktdaten</div>
-    <button id="refresh-btn" onclick="sendRefresh()">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
-        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
-      </svg>
-      Aktualisieren
-    </button>
+<div class="widget" id="widget">
+  <div class="loading">
+    <div class="spinner"></div>
+    <span>Standort wird ermittelt…</span>
   </div>
 </div>
 
 <script>
-let currentContact = null;
-
-/* ── Outgoing messages ─────────────────────────────── */
-function sendMsg(payload) {
-  window.parent.postMessage(payload, '*');
-}
-function sendRefresh() { sendMsg({ type: 'refresh' }); }
-function callNumber(n) { sendMsg({ type: 'callPhoneNumber', value: n }); }
-function openMail(e) { sendMsg({ type: 'sendEmail', value: e }); }
-function copyText(t) { sendMsg({ type: 'copyText', value: t }); }
-
-/* ── Helpers ────────────────────────────────────────── */
-function el(id) { return document.getElementById(id); }
-
-function show(id) { el(id).classList.remove('hidden'); }
-function hide(id) { el(id).classList.add('hidden'); }
-
-function initials(name) {
-  if (!name) return '?';
-  return name.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('');
+function getEmoji(temp) {
+  if (temp > 40) return '🙏';
+  if (temp >= 35) return '🌋';
+  if (temp >= 31) return '🔥';
+  if (temp >= 25) return '☀️';
+  if (temp >= 15) return '🥳';
+  if (temp >= 0)  return '😳';
+  return '🧊';
 }
 
-/* ── QR Code ────────────────────────────────────────── */
-function buildQRText(c) {
-  const lines = [];
+function render(emoji, temp, city) {
+  const w = document.getElementById('widget');
+  w.innerHTML = `
+    <span class="emoji">${emoji}</span>
+    <span class="temp">${Math.round(temp)}°</span>
+    <span class="city">${city}</span>
+  `;
+}
 
-  // VCARD style plain text
-  const name = c.personal?.name?.fullName ||
-               [c.personal?.name?.firstName, c.personal?.name?.lastName].filter(Boolean).join(' ');
-  if (name)                         lines.push('Name: ' + name);
-  if (c.company?.name)              lines.push('Firma: ' + c.company.name);
-  if (c.company?.employmentInfo)    lines.push('Rolle: ' + c.company.employmentInfo);
-  if (c.company?.department)        lines.push('Abteilung: ' + c.company.department);
+function renderFallback() {
+  document.getElementById('widget').innerHTML =
+    '<div class="fallback">Nur Gott kennt das Schicksahl 💫</div>';
+}
 
-  const work = c.phoneNumbers?.work;
-  if (Array.isArray(work)) work.forEach(p => lines.push('Tel (Büro): ' + p));
-  if (c.phoneNumbers?.mobile)       lines.push('Mobil: ' + c.phoneNumbers.mobile);
-  if (c.phoneNumbers?.home)         lines.push('Privat: ' + c.phoneNumbers.home);
-
-  if (c.emails?.primary)            lines.push('E-Mail: ' + c.emails.primary);
-  const wEmails = c.emails?.work;
-  if (Array.isArray(wEmails)) wEmails.forEach(m => lines.push('E-Mail (B): ' + m));
-
-  const pa = c.personal?.address;
-  if (pa) {
-    const addr = [pa.street, pa.postalCode && pa.city ? pa.postalCode + ' ' + pa.city : pa.city, pa.country].filter(Boolean).join(', ');
-    if (addr) lines.push('Adresse: ' + addr);
+async function getCityName(lat, lon) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=de`,
+      { headers: { 'Accept-Language': 'de' } }
+    );
+    const d = await r.json();
+    return d.address?.city
+      || d.address?.town
+      || d.address?.village
+      || d.address?.county
+      || d.address?.state
+      || 'Unbekannt';
+  } catch {
+    return 'Unbekannt';
   }
-  const ca = c.company?.address;
-  if (ca) {
-    const addr = [ca.street, ca.postalCode && ca.city ? ca.postalCode + ' ' + ca.city : ca.city, ca.country].filter(Boolean).join(', ');
-    if (addr) lines.push('Firma Adresse: ' + addr);
-  }
-
-  if (c.company?.website)           lines.push('Web: ' + c.company.website);
-  if (c.personal?.birthday)         lines.push('Geb.: ' + c.personal.birthday);
-
-  // custom fields
-  for (let i = 1; i <= 20; i++) {
-    const v = c.customFields?.['custom' + i];
-    if (v) lines.push('Custom' + i + ': ' + v);
-  }
-
-  return lines.join('\n');
 }
 
-function loadQR(contact) {
-  // Show loading overlay
-  hide('qr-img');
-  show('qr-loading');
-
-  const text = buildQRText(contact);
-  const encoded = encodeURIComponent(text);
-  const url = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&ecc=M&data=${encoded}`;
-
-  const img = new Image();
-  img.onload = () => {
-    el('qr-img').src = url;
-    show('qr-img');
-    hide('qr-loading');
-    hide('qr-placeholder');
-  };
-  img.onerror = () => {
-    // Fallback: text QR code label
-    hide('qr-loading');
-    el('qr-label').textContent = 'QR nicht verfügbar';
-  };
-  img.src = url;
+async function getWeather(lat, lon) {
+  const today = new Date().toISOString().split('T')[0];
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max&timezone=auto&start_date=${today}&end_date=${today}`;
+  const r = await fetch(url);
+  const d = await r.json();
+  return d.daily?.temperature_2m_max?.[0];
 }
 
-/* ── Section builder ────────────────────────────────── */
-function makeSection(title, fields) {
-  // fields: [{label, value, action?, actionLabel?}]
-  const visible = fields.filter(f => f.value != null && f.value !== '' && !(Array.isArray(f.value) && f.value.length === 0));
-  if (!visible.length) return null;
+async function init() {
+  let lat, lon, city;
 
-  const sec = document.createElement('div');
-  sec.className = 'section';
-  const t = document.createElement('div');
-  t.className = 'section-title';
-  t.textContent = title;
-  sec.appendChild(t);
+  // Try XPhone contact address first
+  let contactLat = null, contactLon = null;
 
-  visible.forEach(f => {
-    const row = document.createElement('div');
-    row.className = 'field-row';
-
-    const lbl = document.createElement('div');
-    lbl.className = 'field-label';
-    lbl.textContent = f.label;
-
-    const val = document.createElement('div');
-    val.className = 'field-value';
-
-    // Handle arrays
-    const items = Array.isArray(f.value) ? f.value : [f.value];
-    items.forEach((v, i) => {
-      if (i > 0) val.appendChild(document.createElement('br'));
-      const span = document.createElement('span');
-      span.textContent = v;
-      val.appendChild(span);
-    });
-
-    row.appendChild(lbl);
-    row.appendChild(val);
-
-    // Action button
-    if (f.action) {
-      const btn = document.createElement('button');
-      btn.className = 'field-action';
-      btn.title = f.actionLabel || '';
-      btn.innerHTML = f.actionIcon || '';
-      // For arrays, use first item for action
-      const actionVal = Array.isArray(f.value) ? f.value[0] : f.value;
-      btn.onclick = () => f.action(actionVal);
-      row.appendChild(btn);
+  window.addEventListener('message', async (event) => {
+    const contact = event.data?.contact;
+    const addr = contact?.company?.address || contact?.personal?.address;
+    if (addr?.city) {
+      try {
+        const gc = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+            [addr.street, addr.postalCode, addr.city, addr.country].filter(Boolean).join(', ')
+          )}&format=json&limit=1`
+        );
+        const gd = await gc.json();
+        if (gd[0]) {
+          contactLat = parseFloat(gd[0].lat);
+          contactLon = parseFloat(gd[0].lon);
+          city = addr.city;
+          const temp = await getWeather(contactLat, contactLon);
+          if (temp != null) render(getEmoji(temp), temp, city);
+          else renderFallback();
+        }
+      } catch { renderFallback(); }
     }
-
-    sec.appendChild(row);
   });
 
-  return sec;
+  // Fallback: browser geolocation
+  if (!navigator.geolocation) { renderFallback(); return; }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    // If contact data already handled it, skip
+    if (contactLat !== null) return;
+
+    lat = pos.coords.latitude;
+    lon = pos.coords.longitude;
+
+    try {
+      [city] = await Promise.all([getCityName(lat, lon)]);
+      const temp = await getWeather(lat, lon);
+      if (temp == null) { renderFallback(); return; }
+      render(getEmoji(temp), temp, city);
+    } catch { renderFallback(); }
+
+  }, () => {
+    // Geolocation denied
+    setTimeout(() => {
+      if (!document.querySelector('.emoji')) renderFallback();
+    }, 2000);
+  }, { timeout: 8000 });
 }
 
-/* icons */
-const ICON_PHONE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.65 12 19.79 19.79 0 0 1 1.6 3.4 2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.06 6.06l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
-const ICON_MAIL  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>`;
-const ICON_COPY  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-
-/* ── Render contact ─────────────────────────────────── */
-function renderContact(c) {
-  currentContact = c;
-
-  hide('empty-state');
-  show('header');
-  show('details');
-  show('qr-column');
-
-  // ── Avatar
-  const thumbUrl = c.thumbnailUrl;
-  const fullName = c.personal?.name?.fullName ||
-                   [c.personal?.name?.firstName, c.personal?.name?.lastName].filter(Boolean).join(' ');
-
-  if (thumbUrl) {
-    el('avatar-img').src = thumbUrl;
-    el('avatar-img').style.display = 'block';
-    el('avatar-initials').style.display = 'none';
-  } else if (fullName) {
-    el('avatar-img').style.display = 'none';
-    el('avatar-initials').style.display = 'flex';
-    el('avatar-initials').textContent = initials(fullName);
-  } else {
-    el('avatar-wrap').classList.add('hidden');
-  }
-
-  // ── Name block
-  el('contact-name').textContent = fullName || '—';
-
-  const subtitleParts = [c.company?.employmentInfo, c.company?.name].filter(Boolean);
-  el('contact-subtitle').textContent = subtitleParts.join(' · ');
-
-  if (c.contactType) {
-    el('contact-type-badge').textContent = c.contactType;
-    el('contact-type-badge').classList.remove('hidden');
-  }
-
-  // ── Build sections
-  const container = el('details');
-  container.innerHTML = '';
-
-  // Phone
-  const phoneFields = [
-    { label: 'Büro', value: c.phoneNumbers?.work,   action: callNumber, actionIcon: ICON_PHONE, actionLabel: 'Anrufen' },
-    { label: 'Mobil', value: c.phoneNumbers?.mobile, action: callNumber, actionIcon: ICON_PHONE, actionLabel: 'Anrufen' },
-    { label: 'Privat', value: c.phoneNumbers?.home,  action: callNumber, actionIcon: ICON_PHONE, actionLabel: 'Anrufen' },
-    { label: 'Fax',  value: c.phoneNumbers?.faxNumbers, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' },
-  ];
-  const phoneSection = makeSection('Telefon', phoneFields);
-  if (phoneSection) container.appendChild(phoneSection);
-
-  // Email
-  const emailFields = [
-    { label: 'Primär', value: c.emails?.primary, action: openMail, actionIcon: ICON_MAIL, actionLabel: 'E-Mail senden' },
-    { label: 'Büro',  value: c.emails?.work,    action: openMail, actionIcon: ICON_MAIL, actionLabel: 'E-Mail senden' },
-  ];
-  const emailSection = makeSection('E-Mail', emailFields);
-  if (emailSection) container.appendChild(emailSection);
-
-  // Company
-  const compFields = [
-    { label: 'Firma',   value: c.company?.name },
-    { label: 'Rolle',   value: c.company?.employmentInfo },
-    { label: 'Abtlg.', value: c.company?.department },
-    { label: 'Web',     value: c.company?.website, action: (v) => copyText(v), actionIcon: ICON_COPY, actionLabel: 'Kopieren' },
-  ];
-  const compSection = makeSection('Unternehmen', compFields);
-  if (compSection) container.appendChild(compSection);
-
-  // Addresses
-  const pAddr = c.personal?.address;
-  if (pAddr) {
-    const addrLine = [pAddr.street, pAddr.postalCode && pAddr.city ? pAddr.postalCode + ' ' + pAddr.city : pAddr.city, pAddr.country].filter(Boolean).join(', ');
-    if (addrLine) {
-      const s = makeSection('Privatadresse', [{ label: 'Adresse', value: addrLine, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' }]);
-      if (s) container.appendChild(s);
-    }
-  }
-
-  const cAddr = c.company?.address;
-  if (cAddr) {
-    const addrLine = [cAddr.street, cAddr.postalCode && cAddr.city ? cAddr.postalCode + ' ' + cAddr.city : cAddr.city, cAddr.country].filter(Boolean).join(', ');
-    if (addrLine) {
-      const s = makeSection('Firmenadresse', [{ label: 'Adresse', value: addrLine, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' }]);
-      if (s) container.appendChild(s);
-    }
-  }
-
-  // Personal
-  const persFields = [
-    { label: 'Geb.', value: c.personal?.birthday },
-    { label: 'Titel', value: c.personal?.name?.title },
-  ];
-  const persSection = makeSection('Persönlich', persFields);
-  if (persSection) container.appendChild(persSection);
-
-  // Custom fields
-  const customFields = [];
-  for (let i = 1; i <= 20; i++) {
-    const v = c.customFields?.['custom' + i];
-    if (v) customFields.push({ label: 'Feld ' + i, value: v, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' });
-  }
-  const customSection = makeSection('Benutzerdefiniert', customFields);
-  if (customSection) container.appendChild(customSection);
-
-  // System info
-  const sysFields = [
-    { label: 'Quelle',  value: c.dataSource },
-    { label: 'App',     value: c.dbFields?.dbApplication },
-    { label: 'Version', value: c.dbFields?.dbAppVersion },
-    { label: 'DB',      value: c.dbFields?.dbDataBase },
-    { label: 'Typ',     value: c.dbFields?.dbEntityType },
-    { label: 'ID',      value: c.dbFields?.dbNativeId, action: copyText, actionIcon: ICON_COPY, actionLabel: 'Kopieren' },
-  ];
-  const sysSection = makeSection('System', sysFields);
-  if (sysSection) container.appendChild(sysSection);
-
-  // ── QR
-  loadQR(c);
-}
-
-/* ── Message listener ───────────────────────────────── */
-window.addEventListener('message', event => {
-  const { contact, user } = event.data || {};
-  if (contact) renderContact(contact);
-});
+init();
 </script>
 </body>
 </html>
