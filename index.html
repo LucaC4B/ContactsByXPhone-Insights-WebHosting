@@ -23,7 +23,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0;
     width: 100%;
     height: 100%;
     padding: 12px;
@@ -78,11 +77,11 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .fallback {
-    font-size: clamp(12px, 3.5vw, 15px);
+    font-size: clamp(12px, 3.8vw, 15px);
     color: #888;
     text-align: center;
     padding: 8px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -103,6 +102,9 @@
 </div>
 
 <script>
+var firstName = null;
+var handled = false;
+
 function getEmoji(temp) {
   if (temp > 40) return '🙏';
   if (temp >= 35) return '🌋';
@@ -114,100 +116,103 @@ function getEmoji(temp) {
 }
 
 function render(emoji, temp, city) {
-  const w = document.getElementById('widget');
-  w.innerHTML = `
-    <span class="emoji">${emoji}</span>
-    <span class="temp">${Math.round(temp)}°</span>
-    <span class="city">${city}</span>
-  `;
+  document.getElementById('widget').innerHTML =
+    '<span class="emoji">' + emoji + '</span>' +
+    '<span class="temp">' + Math.round(temp) + '°</span>' +
+    '<span class="city">' + city + '</span>';
 }
 
 function renderFallback() {
+  var name = firstName ? firstName + "'s" : 'das';
   document.getElementById('widget').innerHTML =
-    '<div class="fallback">Nur Gott kennt das Schicksahl 💫</div>';
+    '<div class="fallback">Nur Gott kennt ' + name + ' Schicksahl 💫</div>';
 }
 
-async function getCityName(lat, lon) {
+function buildAddress(contact) {
+  var addr = (contact && contact.company && contact.company.address && contact.company.address.city)
+    ? contact.company.address
+    : (contact && contact.personal && contact.personal.address && contact.personal.address.city)
+      ? contact.personal.address
+      : null;
+  if (!addr) return null;
+  return [addr.street, addr.postalCode, addr.city, addr.country].filter(Boolean).join(', ');
+}
+
+async function fetchWeatherByAddress(addressString, cityLabel) {
   try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=de`,
-      { headers: { 'Accept-Language': 'de' } }
-    );
-    const d = await r.json();
-    return d.address?.city
-      || d.address?.town
-      || d.address?.village
-      || d.address?.county
-      || d.address?.state
-      || 'Unbekannt';
-  } catch {
-    return 'Unbekannt';
+    var geoUrl = 'https://geocoding-api.open-meteo.com/v1/search?name='
+      + encodeURIComponent(addressString) + '&count=1&language=de&format=json';
+    var geoRes = await fetch(geoUrl);
+    var geoData = await geoRes.json();
+    if (!geoData.results || !geoData.results[0]) return false;
+
+    var lat = geoData.results[0].latitude;
+    var lon = geoData.results[0].longitude;
+    var city = cityLabel || geoData.results[0].name || addressString;
+
+    return await fetchWeatherByCoords(lat, lon, city);
+  } catch (e) {
+    return false;
   }
 }
 
-async function getWeather(lat, lon) {
-  const today = new Date().toISOString().split('T')[0];
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max&timezone=auto&start_date=${today}&end_date=${today}`;
-  const r = await fetch(url);
-  const d = await r.json();
-  return d.daily?.temperature_2m_max?.[0];
+async function fetchWeatherByCoords(lat, lon, city) {
+  try {
+    var today = new Date().toISOString().split('T')[0];
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat
+      + '&longitude=' + lon
+      + '&daily=temperature_2m_max&timezone=auto&start_date=' + today + '&end_date=' + today;
+    var res = await fetch(url);
+    var data = await res.json();
+    var temp = data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_max[0];
+    if (temp == null) return false;
+    render(getEmoji(temp), temp, city);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
-async function init() {
-  let lat, lon, city;
+window.addEventListener('message', async function(event) {
+  if (handled) return;
+  var contact = event.data && event.data.contact;
+  if (!contact) return;
 
-  // Try XPhone contact address first
-  let contactLat = null, contactLon = null;
+  firstName = (contact.personal && contact.personal.name && contact.personal.name.firstName) || null;
 
-  window.addEventListener('message', async (event) => {
-    const contact = event.data?.contact;
-    const addr = contact?.company?.address || contact?.personal?.address;
-    if (addr?.city) {
-      try {
-        const gc = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-            [addr.street, addr.postalCode, addr.city, addr.country].filter(Boolean).join(', ')
-          )}&format=json&limit=1`
-        );
-        const gd = await gc.json();
-        if (gd[0]) {
-          contactLat = parseFloat(gd[0].lat);
-          contactLon = parseFloat(gd[0].lon);
-          city = addr.city;
-          const temp = await getWeather(contactLat, contactLon);
-          if (temp != null) render(getEmoji(temp), temp, city);
-          else renderFallback();
-        }
-      } catch { renderFallback(); }
-    }
-  });
+  var address = buildAddress(contact);
+  if (!address) {
+    renderFallback();
+    handled = true;
+    return;
+  }
 
-  // Fallback: browser geolocation
+  var cityLabel = (contact.company && contact.company.address && contact.company.address.city)
+    || (contact.personal && contact.personal.address && contact.personal.address.city)
+    || '';
+
+  handled = true;
+  var ok = await fetchWeatherByAddress(address, cityLabel);
+  if (!ok) renderFallback();
+});
+
+// Fallback: Browser-Geolocation falls nach 3s kein postMessage kam
+setTimeout(async function() {
+  if (handled) return;
   if (!navigator.geolocation) { renderFallback(); return; }
-
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    // If contact data already handled it, skip
-    if (contactLat !== null) return;
-
-    lat = pos.coords.latitude;
-    lon = pos.coords.longitude;
-
-    try {
-      [city] = await Promise.all([getCityName(lat, lon)]);
-      const temp = await getWeather(lat, lon);
-      if (temp == null) { renderFallback(); return; }
-      render(getEmoji(temp), temp, city);
-    } catch { renderFallback(); }
-
-  }, () => {
-    // Geolocation denied
-    setTimeout(() => {
-      if (!document.querySelector('.emoji')) renderFallback();
-    }, 2000);
-  }, { timeout: 8000 });
-}
-
-init();
+  navigator.geolocation.getCurrentPosition(
+    async function(pos) {
+      if (handled) return;
+      handled = true;
+      var ok = await fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude, 'Aktueller Standort');
+      if (!ok) renderFallback();
+    },
+    function() {
+      if (!handled) renderFallback();
+    },
+    { timeout: 6000 }
+  );
+}, 3000);
 </script>
 </body>
 </html>
