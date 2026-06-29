@@ -1,182 +1,466 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Insights Panel</title>
+<title>Contact Doneness</title>
 <style>
-html,body{
-margin:0;
-padding:0;
-width:100%;
-height:100%;
-background:#0b0b0b;
-font-family:Arial, sans-serif;
-color:#fff;
-overflow:hidden;
-}
-#app{
-width:100%;
-height:100%;
-position:relative;
-}
-#topbar{
-position:absolute;
-top:0;
-right:0;
-padding:10px;
-z-index:10;
-}
-button{
-background:#222;
-color:#fff;
-border:0;
-padding:6px 10px;
-cursor:pointer;
-font-size:12px;
-}
-#grill{
-position:absolute;
-bottom:0;
-width:100%;
-height:40%;
-background:#111;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-#grill.on{
-background:radial-gradient(#333,#000);
-}
-#plate{
-width:200px;
-height:20px;
-background:#444;
-border-radius:10px;
-position:relative;
-}
-#contactImg{
-width:80px;
-height:80px;
-border-radius:50%;
-position:absolute;
-top:-70px;
-left:50%;
-transform:translateX(-50%);
-object-fit:cover;
-}
-.sizzle{
-animation:sizzle 0.2s infinite alternate;
-}
-@keyframes sizzle{
-0%{transform:translateX(-50%) rotate(-2deg)}
-100%{transform:translateX(-50%) rotate(2deg)}
-}
-.flip{
-animation:flip 2s infinite;
-}
-@keyframes flip{
-0%{transform:translateX(-50%) rotateY(0deg)}
-50%{transform:translateX(-50%) rotateY(180deg)}
-100%{transform:translateX(-50%) rotateY(360deg)}
-}
-#info{
-position:absolute;
-top:20px;
-left:20px;
-right:20px;
-font-size:14px;
-line-height:1.4;
-}
+  :root {
+    --bg: #1a1410;
+    --bg2: #241b14;
+    --ember: #ff5a1f;
+    --ember-bright: #ffb43c;
+    --grate: #3a3a3e;
+    --grate-hi: #56565c;
+    --text: #f4ece0;
+    --muted: #9a8d7d;
+    --rare: #d24b4b;
+    --medrare: #d9744a;
+    --medium: #d99a4a;
+    --medwell: #b58a52;
+    --well: #6e5236;
+    --ash: #2a221c;
+  }
+ 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+ 
+  body {
+    background:
+      radial-gradient(120% 80% at 50% 110%, rgba(255,90,31,0.10), transparent 60%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    color: var(--text);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 14px 16px 12px;
+    position: relative;
+  }
+ 
+  /* ---- Header ---- */
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ember-bright);
+  }
+  .title small {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .copy-btn {
+    flex: 0 0 auto;
+    appearance: none;
+    border: 1px solid #4a3a2c;
+    background: #2c2118;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s ease;
+    font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--ember); }
+  .copy-btn:active { transform: translateY(1px); }
+  .copy-btn:focus-visible { outline: 2px solid var(--ember-bright); outline-offset: 2px; }
+ 
+  /* ---- Doneness label ---- */
+  .verdict {
+    flex: 0 0 auto;
+    text-align: center;
+    margin: 6px 0 2px;
+    min-height: 44px;
+  }
+  .doneness {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.05;
+  }
+  .temp {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+  .temp b { color: var(--text); font-weight: 600; }
+ 
+  /* ---- Grill stage ---- */
+  .stage {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    position: relative;
+  }
+  svg.grill { width: 100%; height: 100%; max-height: 260px; display: block; }
+ 
+  .flame { transform-origin: center bottom; }
+  .grill-on .flame { animation: flicker 0.45s ease-in-out infinite alternate; }
+  @keyframes flicker {
+    from { opacity: .55; transform: scaleY(0.86) translateY(2px); }
+    to   { opacity: 1;   transform: scaleY(1.08) translateY(-1px); }
+  }
+ 
+  .smoke { opacity: 0; }
+  .grill-on .smoke { animation: rise 2.6s linear infinite; }
+  @keyframes rise {
+    0%   { opacity: 0;   transform: translateY(0) scale(0.6); }
+    25%  { opacity: .35; }
+    100% { opacity: 0;   transform: translateY(-46px) scale(1.5); }
+  }
+ 
+  /* steak (the profile picture) flip */
+  .steak-grp { transform-origin: center center; }
+  .grill-on .steak-grp { animation: flip 3.4s ease-in-out infinite; }
+  @keyframes flip {
+    0%, 38%   { transform: rotateY(0deg) translateY(0); }
+    44%       { transform: rotateY(0deg) translateY(-26px); }
+    50%       { transform: rotateY(180deg) translateY(-26px); }
+    56%, 100% { transform: rotateY(180deg) translateY(0); }
+  }
+  .steak-grp { transform-style: preserve-3d; }
+ 
+  .sizzle { opacity: 0; }
+  .grill-on .sizzle { animation: sizzle 0.7s ease-out infinite; }
+  @keyframes sizzle {
+    0%   { opacity: 0; transform: translateY(0) scale(0.4); }
+    40%  { opacity: .9; }
+    100% { opacity: 0; transform: translateY(-22px) scale(1); }
+  }
+ 
+  .spatula {
+    opacity: 0;
+    transform-origin: center;
+  }
+  .grill-on .spatula { animation: spat 3.4s ease-in-out infinite; }
+  @keyframes spat {
+    0%, 36%   { opacity: 0; transform: translate(40px, 20px) rotate(-20deg); }
+    44%       { opacity: 1; transform: translate(0px, -6px) rotate(-8deg); }
+    52%       { opacity: 1; transform: translate(0px, -6px) rotate(-8deg); }
+    60%, 100% { opacity: 0; transform: translate(40px, 20px) rotate(-20deg); }
+  }
+ 
+  @media (prefers-reduced-motion: reduce) {
+    .flame, .smoke, .steak-grp, .sizzle, .spatula { animation: none !important; }
+    .steak-grp { transform: rotateY(0deg) !important; }
+    .flame { opacity: .9; }
+  }
+ 
+  /* ---- Footer / location ---- */
+  .foot {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    min-height: 16px;
+    padding-top: 4px;
+  }
+  .foot b { color: var(--ember-bright); font-weight: 600; }
+ 
+  .status {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 0 20px;
+    line-height: 1.5;
+  }
+  .hidden { display: none !important; }
 </style>
 </head>
-<body>
-<div id="app">
-<div id="topbar">
-<button onclick="copyAll()">Copy</button>
+<body class="grill-off">
+ 
+  <div class="head">
+<div class="title">On the Grill<small id="who"></small></div>
+<button class="copy-btn" id="copyLog" title="Copy debug log">⧉ Log</button>
 </div>
-<div id="info"></div>
-<div id="grill">
-<div id="plate">
-<img id="contactImg" src="" />
+ 
+  <div class="verdict hidden" id="verdict">
+<div class="doneness" id="donenessText">—</div>
+<div class="temp" id="tempText"></div>
 </div>
+ 
+  <div class="status" id="status">Waiting for contact…</div>
+ 
+  <div class="stage hidden" id="stage">
+<svg class="grill" id="grillSvg" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+<clipPath id="steakClip"><circle cx="160" cy="120" r="38"/></clipPath>
+<radialGradient id="emberGrad" cx="50%" cy="100%" r="80%">
+<stop offset="0%" stop-color="#ffcf5e"/>
+<stop offset="45%" stop-color="#ff5a1f"/>
+<stop offset="100%" stop-color="#7a1d05"/>
+</radialGradient>
+<linearGradient id="legGrad" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#4a4a50"/>
+<stop offset="100%" stop-color="#202024"/>
+</linearGradient>
+</defs>
+ 
+      <!-- legs -->
+<rect x="58" y="170" width="9" height="58" rx="3" fill="url(#legGrad)"/>
+<rect x="253" y="170" width="9" height="58" rx="3" fill="url(#legGrad)"/>
+ 
+      <!-- grill body / firebox -->
+<ellipse cx="160" cy="178" rx="120" ry="26" fill="#15110d"/>
+<rect x="40" y="120" width="240" height="62" rx="14" fill="#2c2a2e"/>
+<ellipse cx="160" cy="120" rx="120" ry="30" fill="#3a383d"/>
+<ellipse cx="160" cy="120" rx="110" ry="25" fill="#100d0a" id="fireboxInner"/>
+ 
+      <!-- embers (glow when on) -->
+<g id="embers">
+<ellipse cx="160" cy="122" rx="100" ry="20" fill="url(#emberGrad)" opacity="0" id="emberGlow"/>
+</g>
+ 
+      <!-- flames -->
+<g id="flames">
+<path class="flame" d="M120 124 q-7 -22 4 -34 q-2 16 9 20 q8 -10 3 -24 q14 14 7 34 z" fill="#ff7a1f"/>
+<path class="flame" d="M160 122 q-8 -26 5 -40 q-3 18 10 22 q9 -12 3 -28 q16 16 8 40 z" fill="#ffae3c" style="animation-delay:.15s"/>
+<path class="flame" d="M200 124 q-7 -22 4 -34 q-2 16 9 20 q8 -10 3 -24 q14 14 7 34 z" fill="#ff7a1f" style="animation-delay:.3s"/>
+</g>
+ 
+      <!-- grate bars (over the food) -->
+<g stroke="var(--grate)" stroke-width="4" stroke-linecap="round" opacity="0.85">
+<line x1="70" y1="108" x2="250" y2="108"/>
+<line x1="64" y1="120" x2="256" y2="120"/>
+<line x1="70" y1="132" x2="250" y2="132"/>
+</g>
+ 
+      <!-- smoke -->
+<g id="smokeGroup" fill="#cfc6ba">
+<circle class="smoke" cx="135" cy="96" r="7" style="animation-delay:0s"/>
+<circle class="smoke" cx="170" cy="92" r="9" style="animation-delay:.9s"/>
+<circle class="smoke" cx="190" cy="98" r="6" style="animation-delay:1.7s"/>
+</g>
+ 
+      <!-- sizzle sparks -->
+<g id="sizzleGroup" fill="#ffe08a">
+<circle class="sizzle" cx="138" cy="112" r="2.5" style="animation-delay:.1s"/>
+<circle class="sizzle" cx="182" cy="116" r="2"   style="animation-delay:.45s"/>
+<circle class="sizzle" cx="160" cy="108" r="2.5" style="animation-delay:.7s"/>
+</g>
+ 
+      <!-- the steak = profile picture -->
+<g class="steak-grp" id="steakGrp">
+<ellipse cx="160" cy="122" rx="42" ry="34" fill="#000" opacity="0.35"/>
+<circle cx="160" cy="120" r="40" fill="#5b3a22" id="steakBase"/>
+<image id="steakImg" x="122" y="82" width="76" height="76" clip-path="url(#steakClip)" preserveAspectRatio="xMidYMid slice"/>
+<!-- sear / browning overlay, opacity driven by JS -->
+<circle cx="160" cy="120" r="38" fill="#1d0e04" opacity="0" id="searOverlay" clip-path="url(#steakClip)"/>
+<!-- grill marks -->
+<g clip-path="url(#steakClip)" stroke="#1a0c03" stroke-width="4" opacity="0" id="grillMarks">
+<line x1="128" y1="104" x2="192" y2="104"/>
+<line x1="124" y1="122" x2="196" y2="122"/>
+<line x1="128" y1="140" x2="192" y2="140"/>
+</g>
+<circle cx="160" cy="120" r="40" fill="none" stroke="#3a2415" stroke-width="3"/>
+</g>
+ 
+      <!-- spatula (slides in during flip) -->
+<g class="spatula" id="spatula">
+<rect x="150" y="150" width="60" height="9" rx="2" fill="#c9ccd2"/>
+<rect x="205" y="150" width="40" height="5" rx="2.5" fill="#6b4a2e"/>
+</g>
+</svg>
 </div>
-</div>
+ 
+  <div class="foot hidden" id="foot"></div>
+ 
 <script>
-let lastEvent=null
-let logs=[]
-let contactData=null
-let userData=null
-let heat=0
-
-window.addEventListener('message', async event=>{
-logs.push(event.data)
-contactData=event.data.contact
-userData=event.data.user
-await run()
-})
-
-async function run(){
-if(!contactData)return
-let cities=[]
-if(contactData.personal&&contactData.personal.address&&contactData.personal.address.city)cities.push(contactData.personal.address.city)
-if(contactData.company&&contactData.company.address&&contactData.company.address.city)cities.push(contactData.company.address.city)
-cities=cities.filter(Boolean)
-
-let temp=null
-let lat=null
-let lon=null
-
-for(let city of cities){
-try{
-let geo=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city))
-let g=await geo.json()
-if(g&&g.results&&g.results.length){
-lat=g.results[0].latitude
-lon=g.results[0].longitude
-let w=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&daily=temperature_2m_max&timezone=auto')
-let wj=await w.json()
-if(wj&&wj.daily&&wj.daily.temperature_2m_max){
-temp=Math.max(...wj.daily.temperature_2m_max)
-break
-}
-}
-}catch(e){}
-}
-
-let grill=document.getElementById('grill')
-let img=document.getElementById('contactImg')
-let info=document.getElementById('info')
-
-if(!temp){
-grill.classList.remove('on')
-img.src=contactData.thumbnailUrl||''
-info.innerText='No data'
-return
-}
-
-grill.classList.add('on')
-img.src=contactData.thumbnailUrl||''
-
-let level='rare'
-if(temp>=40)level='well done'
-else if(temp>=30)level='medium well'
-else if(temp>=17)level='medium'
-
-heat=temp
-info.innerText='Heat: '+temp+'° - '+level
-
-img.classList.add('sizzle')
-img.classList.add('flip')
-}
-
-function copyAll(){
-let payload={
-type:'copyText',
-value:JSON.stringify({logs:logs,contact:contactData,user:userData})
-}
-navigator.clipboard.writeText(JSON.stringify(payload))
-}
+(function () {
+  "use strict";
+ 
+  // ---- debug log of everything sent / received ----
+  const log = { input: null, received: [], sent: [], weather: [] };
+ 
+  function send(msg) {
+    log.sent.push({ t: new Date().toISOString(), msg });
+    try { window.parent.postMessage(msg, "*"); } catch (e) {}
+  }
+ 
+  const $ = id => document.getElementById(id);
+ 
+  // ---------- doneness scale ----------
+  // >40 well done … <17 rare
+  function doneness(temp) {
+    if (temp == null || isNaN(temp)) return null;
+    if (temp >= 40) return { name: "Well Done",     color: "var(--well)",    sear: 0.78, marks: 0.9 };
+    if (temp >= 33) return { name: "Medium Well",    color: "var(--medwell)", sear: 0.55, marks: 0.75 };
+    if (temp >= 25) return { name: "Medium",         color: "var(--medium)",  sear: 0.38, marks: 0.6 };
+    if (temp >= 17) return { name: "Medium Rare",    color: "var(--medrare)", sear: 0.20, marks: 0.4 };
+    return                  { name: "Rare",          color: "var(--rare)",    sear: 0.08, marks: 0.2 };
+  }
+ 
+  // ---------- gather candidate cities from the contact ----------
+  function collectCities(contact) {
+    const out = [];
+    const add = (city, label) => { if (city && String(city).trim()) out.push({ city: String(city).trim(), label }); };
+    try {
+      if (contact.company && contact.company.address) add(contact.company.address.city, "Company");
+      if (contact.personal && contact.personal.address) add(contact.personal.address.city, "Home");
+    } catch (e) {}
+    // de-dupe by city name
+    const seen = new Set();
+    return out.filter(c => { const k = c.city.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+ 
+  async function geocode(city) {
+    const url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(city) + "&count=1&language=en&format=json";
+    const r = await fetch(url);
+    const j = await r.json();
+    log.weather.push({ step: "geocode", city, result: j });
+    if (j && j.results && j.results.length) {
+      const g = j.results[0];
+      return { lat: g.latitude, lon: g.longitude, name: g.name, country: g.country };
+    }
+    return null;
+  }
+ 
+  async function getMaxTemp(lat, lon) {
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+                "&daily=temperature_2m_max&forecast_days=1&timezone=auto";
+    const r = await fetch(url);
+    const j = await r.json();
+    log.weather.push({ step: "forecast", lat, lon, result: j });
+    if (j && j.daily && j.daily.temperature_2m_max && j.daily.temperature_2m_max.length) {
+      return j.daily.temperature_2m_max[0];
+    }
+    return null;
+  }
+ 
+  // ---------- render ----------
+  function turnGrillOn(temp, place) {
+    const d = doneness(temp);
+    document.body.classList.remove("grill-off");
+    document.body.classList.add("grill-on");
+ 
+    $("status").classList.add("hidden");
+    $("stage").classList.remove("hidden");
+    $("verdict").classList.remove("hidden");
+    $("foot").classList.remove("hidden");
+ 
+    $("emberGlow").setAttribute("opacity", "1");
+    $("donenessText").textContent = d.name;
+    $("donenessText").style.color = d.color;
+    $("tempText").innerHTML = "Max temp <b>" + Math.round(temp) + "°C</b> today";
+ 
+    $("searOverlay").setAttribute("opacity", d.sear);
+    $("grillMarks").setAttribute("opacity", d.marks);
+    $("steakBase").setAttribute("fill", d.color);
+ 
+    $("foot").innerHTML = "Cooking in <b>" + place.name + "</b>" + (place.country ? ", " + place.country : "");
+  }
+ 
+  function turnGrillOff(reason) {
+    document.body.classList.remove("grill-on");
+    document.body.classList.add("grill-off");
+    $("stage").classList.add("hidden");
+    $("verdict").classList.add("hidden");
+    $("foot").classList.add("hidden");
+    $("status").classList.remove("hidden");
+    $("status").textContent = reason || "Grill is cold — no location to cook with.";
+    $("emberGlow").setAttribute("opacity", "0");
+  }
+ 
+  function setPhoto(contact) {
+    const url = contact && contact.thumbnailUrl;
+    if (url) {
+      $("steakImg").setAttribute("href", url);
+      $("steakImg").setAttribute("xlink:href", url);
+    } else {
+      // no photo: keep the meaty disc, hide image layer
+      $("steakImg").setAttribute("href", "");
+    }
+  }
+ 
+  function setWho(contact, user) {
+    let name = "";
+    try {
+      name = (contact.personal && contact.personal.name && contact.personal.name.displayName)
+          || (contact.personal && contact.personal.name && contact.personal.name.fullName)
+          || (contact.company && contact.company.name) || "";
+    } catch (e) {}
+    $("who").textContent = name ? name : "";
+  }
+ 
+  async function cook(contact, user) {
+    setWho(contact, user);
+    setPhoto(contact);
+ 
+    const cities = collectCities(contact);
+    if (!cities.length) {
+      turnGrillOff("Grill is cold — this contact has no city on file.");
+      return;
+    }
+ 
+    $("status").textContent = "Lighting the grill…";
+ 
+    for (const c of cities) {
+      try {
+        const geo = await geocode(c.city);
+        if (!geo) continue;
+        const temp = await getMaxTemp(geo.lat, geo.lon);
+        if (temp == null) continue;
+        turnGrillOn(temp, geo);
+        return;
+      } catch (e) {
+        log.weather.push({ step: "error", city: c.city, error: String(e) });
+      }
+    }
+    turnGrillOff("Grill is cold — couldn't reach the weather service.");
+  }
+ 
+  // ---------- message wiring ----------
+  window.addEventListener("message", event => {
+    const data = event.data || {};
+    log.received.push({ t: new Date().toISOString(), data });
+    if (!data.contact && !data.user) return;
+    log.input = data;
+    const contact = data.contact || {};
+    const user = data.user || {};
+    cook(contact, user);
+  });
+ 
+  // ---------- copy log button ----------
+  $("copyLog").addEventListener("click", () => {
+    const text = JSON.stringify(log, null, 2);
+    send({ type: "copyText", value: text });
+    const b = $("copyLog");
+    const old = b.textContent;
+    b.textContent = "✓ Copied";
+    setTimeout(() => { b.textContent = old; }, 1400);
+  });
+ 
+  // ask host for data on load
+  send({ type: "refresh" });
+})();
 </script>
 </body>
 </html>
