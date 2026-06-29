@@ -2,217 +2,148 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wetter Insights</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weather Insight</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    overflow: hidden;
-  }
-
-  .widget {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    padding: 12px;
-    text-align: center;
-  }
-
-  .emoji {
-    font-size: clamp(48px, 14vw, 80px);
-    line-height: 1;
-    margin-bottom: 4px;
-    display: block;
-  }
-
-  .temp {
-    font-size: clamp(32px, 10vw, 56px);
-    font-weight: 700;
-    line-height: 1;
-    color: #1a1a1a;
-    letter-spacing: -1px;
-    margin-bottom: 4px;
-  }
-
-  .city {
-    font-size: clamp(11px, 3.5vw, 15px);
-    color: #666;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 90%;
-  }
-
-  .loading {
-    font-size: 13px;
-    color: #999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #e0e0e0;
-    border-top-color: #999;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .fallback {
-    font-size: clamp(12px, 3.8vw, 15px);
-    color: #888;
-    text-align: center;
-    padding: 8px;
-    line-height: 1.6;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .temp { color: #f0f0f0; }
-    .city { color: #aaa; }
-    .loading { color: #777; }
-    .fallback { color: #777; }
-    .spinner { border-color: #444; border-top-color: #888; }
-  }
+html,body{
+margin:0;
+width:100%;
+height:100%;
+font-family:Arial,sans-serif;
+background:#fff;
+overflow:hidden;
+}
+#app{
+width:100%;
+height:100%;
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+}
+#debug{
+position:absolute;
+top:6px;
+right:6px;
+border:none;
+background:#f3f3f3;
+border-radius:6px;
+padding:4px 8px;
+cursor:pointer;
+font-size:11px;
+}
+#content{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+text-align:center;
+gap:4px;
+}
+#emoji{
+font-size:72px;
+line-height:1;
+}
+#temp{
+font-size:42px;
+font-weight:700;
+line-height:1;
+}
+#city{
+font-size:16px;
+opacity:.7;
+line-height:1.2;
+max-width:90%;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
 </style>
 </head>
 <body>
-<div class="widget" id="widget">
-  <div class="loading">
-    <div class="spinner"></div>
-    <span>Standort wird ermittelt…</span>
-  </div>
+<div id="app">
+<button id="debug">Debug</button>
+<div id="content">
+<div id="emoji">💫</div>
+<div id="temp">--°</div>
+<div id="city">Nur Gott kennt das Schicksahl 💫</div>
+</div>
 </div>
 
 <script>
-var firstName = null;
-var handled = false;
+let lastResponse=null;
 
-function getEmoji(temp) {
-  if (temp > 40) return '🙏';
-  if (temp >= 35) return '🌋';
-  if (temp >= 31) return '🔥';
-  if (temp >= 25) return '☀️';
-  if (temp >= 15) return '🥳';
-  if (temp >= 0)  return '😳';
-  return '🧊';
+function getEmoji(temp){
+if(temp>=40)return"🙏";
+if(temp>=35)return"🌋";
+if(temp>=31)return"🔥";
+if(temp>=25)return"☀️";
+if(temp>=15)return"🥳";
+if(temp>=0)return"😳";
+return"🧊";
 }
 
-function render(emoji, temp, city) {
-  document.getElementById('widget').innerHTML =
-    '<span class="emoji">' + emoji + '</span>' +
-    '<span class="temp">' + Math.round(temp) + '°</span>' +
-    '<span class="city">' + city + '</span>';
+function sendCopy(text){
+window.parent.postMessage({type:"copyText",value:text},"*");
 }
 
-function renderFallback() {
-  var name = firstName ? firstName + "'s" : 'das';
-  document.getElementById('widget').innerHTML =
-    '<div class="fallback">Nur Gott kennt ' + name + ' Schicksahl 💫</div>';
-}
-
-function buildAddress(contact) {
-  var addr = (contact && contact.company && contact.company.address && contact.company.address.city)
-    ? contact.company.address
-    : (contact && contact.personal && contact.personal.address && contact.personal.address.city)
-      ? contact.personal.address
-      : null;
-  if (!addr) return null;
-  return [addr.street, addr.postalCode, addr.city, addr.country].filter(Boolean).join(', ');
-}
-
-async function fetchWeatherByAddress(addressString, cityLabel) {
-  try {
-    var geoUrl = 'https://geocoding-api.open-meteo.com/v1/search?name='
-      + encodeURIComponent(addressString) + '&count=1&language=de&format=json';
-    var geoRes = await fetch(geoUrl);
-    var geoData = await geoRes.json();
-    if (!geoData.results || !geoData.results[0]) return false;
-
-    var lat = geoData.results[0].latitude;
-    var lon = geoData.results[0].longitude;
-    var city = cityLabel || geoData.results[0].name || addressString;
-
-    return await fetchWeatherByCoords(lat, lon, city);
-  } catch (e) {
-    return false;
-  }
-}
-
-async function fetchWeatherByCoords(lat, lon, city) {
-  try {
-    var today = new Date().toISOString().split('T')[0];
-    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat
-      + '&longitude=' + lon
-      + '&daily=temperature_2m_max&timezone=auto&start_date=' + today + '&end_date=' + today;
-    var res = await fetch(url);
-    var data = await res.json();
-    var temp = data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_max[0];
-    if (temp == null) return false;
-    render(getEmoji(temp), temp, city);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-window.addEventListener('message', async function(event) {
-  if (handled) return;
-  var contact = event.data && event.data.contact;
-  if (!contact) return;
-
-  firstName = (contact.personal && contact.personal.name && contact.personal.name.firstName) || null;
-
-  var address = buildAddress(contact);
-  if (!address) {
-    renderFallback();
-    handled = true;
-    return;
-  }
-
-  var cityLabel = (contact.company && contact.company.address && contact.company.address.city)
-    || (contact.personal && contact.personal.address && contact.personal.address.city)
-    || '';
-
-  handled = true;
-  var ok = await fetchWeatherByAddress(address, cityLabel);
-  if (!ok) renderFallback();
+document.getElementById("debug").addEventListener("click",()=>{
+sendCopy(JSON.stringify(lastResponse||{error:"Keine Daten"},null,2));
 });
 
-// Fallback: Browser-Geolocation falls nach 3s kein postMessage kam
-setTimeout(async function() {
-  if (handled) return;
-  if (!navigator.geolocation) { renderFallback(); return; }
-  navigator.geolocation.getCurrentPosition(
-    async function(pos) {
-      if (handled) return;
-      handled = true;
-      var ok = await fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude, 'Aktueller Standort');
-      if (!ok) renderFallback();
-    },
-    function() {
-      if (!handled) renderFallback();
-    },
-    { timeout: 6000 }
-  );
-}, 3000);
+async function loadWeather(contact){
+try{
+const parts=[
+contact?.personal?.address?.city,
+contact?.company?.address?.city,
+contact?.personal?.address?.country,
+contact?.company?.address?.country
+].filter(Boolean);
+
+const query=parts.join(" ").trim();
+
+if(!query){
+document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
+return;
+}
+
+const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=de&format=json`);
+const geo=await geoRes.json();
+
+if(!geo.results?.length){
+document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
+return;
+}
+
+const place=geo.results[0];
+
+const weatherRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&daily=temperature_2m_max&forecast_days=1&timezone=auto`);
+const weather=await weatherRes.json();
+
+lastResponse={
+location:place,
+weather
+};
+
+const temp=Math.round(weather?.daily?.temperature_2m_max?.[0]);
+
+if(Number.isNaN(temp)){
+document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
+return;
+}
+
+document.getElementById("emoji").textContent=getEmoji(temp);
+document.getElementById("temp").textContent=temp+"°";
+document.getElementById("city").textContent=place.name||query;
+}catch{
+document.getElementById("city").textContent="Nur Gott kennt das Schicksahl 💫";
+}
+}
+
+window.addEventListener("message",event=>{
+const contact=event.data?.contact||{};
+loadWeather(contact);
+});
 </script>
 </body>
 </html>
