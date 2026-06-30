@@ -3,267 +3,446 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offene Tickets</title>
+<title>Pizza Insights</title>
 <style>
   :root {
-    --bg: #0f1419;
-    --surface: #161d26;
-    --line: #243140;
-    --text: #e8eef5;
-    --muted: #7d8da0;
-    --accent: #4da3ff;
-    --warn: #f0a13c;
-    --zero: #3fb27f;
-    --hot: #ff5d6c;
+    --rosso: #c0392b;
+    --rosso-dark: #962d22;
+    --verde: #2e7d4f;
+    --verde-dark: #235f3d;
+    --beige: #faf3e6;
+    --beige-dark: #f0e3c8;
+    --crosta: #8a5a2b;
+    --text-dark: #3a2c1a;
+    --text-muted: #7c6a52;
+    --shadow: rgba(58, 44, 26, 0.12);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    height: 100vh;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, var(--beige) 0%, var(--beige-dark) 100%);
+    color: var(--text-dark);
     display: flex;
     flex-direction: column;
-    padding: 16px 18px 14px;
-    position: relative;
+    min-height: 100vh;
+    font-size: 14px;
   }
- 
-  .top {
+
+  /* Kopfbereich */
+  .header {
+    background: linear-gradient(135deg, var(--rosso) 0%, var(--rosso-dark) 100%);
+    color: #fff;
+    padding: 14px 16px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::after {
+    content: "";
+    position: absolute;
+    right: -20px;
+    top: -20px;
+    width: 90px;
+    height: 90px;
+    background: radial-gradient(circle at 30% 30%, #e0b04a 0%, #c0392b 70%);
+    border-radius: 50%;
+    opacity: 0.18;
+  }
+
+  .header-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .pizza-icon {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .header-titles {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .customer-name {
+    font-size: 17px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+
+  /* Inhaltsbereich */
+  .content {
+    flex: 1;
+    padding: 12px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 6px var(--shadow);
+    border-left: 4px solid var(--verde);
+  }
+
+  .card-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--verde-dark);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .card-value {
+    font-size: 14px;
+    color: var(--text-dark);
+    word-break: break-word;
+  }
+
+  /* Telefon-Karte mit Aktion */
+  .action-row {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 8px;
-    flex: 0 0 auto;
   }
-  .eyebrow {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
+
+  .call-btn {
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 12.5px;
     font-weight: 600;
-  }
-  .contact-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    margin-top: 3px;
-    line-height: 1.2;
-    max-width: 200px;
-  }
-  .copy-btn {
-    flex: 0 0 auto;
-    appearance: none;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    color: var(--muted);
-    border-radius: 7px;
-    width: 30px; height: 30px;
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .15s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.1s ease;
   }
-  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
-  .copy-btn:active { transform: translateY(1px); }
-  .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .copy-btn svg { width: 14px; height: 14px; }
- 
-  .stage {
-    flex: 1 1 auto;
+
+  .call-btn:hover {
+    background: var(--verde-dark);
+  }
+
+  .call-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Bestellverlauf */
+  .orders-section {
+    margin-top: 2px;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--rosso-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .order-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 9px 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 6px var(--shadow);
+    border-left: 4px solid var(--crosta);
+  }
+
+  .order-card:last-child {
+    margin-bottom: 0;
+  }
+
+  .order-date {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .order-items {
+    font-size: 13.5px;
+    color: var(--text-dark);
+    line-height: 1.4;
+  }
+
+  /* Platzhalter / Leerzustand */
+  .placeholder {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 0;
     text-align: center;
+    padding: 30px 20px;
+    color: var(--text-muted);
+    gap: 8px;
   }
- 
-  .count {
-    font-size: 88px;
-    font-weight: 800;
-    line-height: 0.9;
-    letter-spacing: -0.03em;
-    color: var(--accent);
-    font-variant-numeric: tabular-nums;
-    opacity: 0;
-    transform: translateY(8px);
-    animation: pop .45s cubic-bezier(.2,.8,.2,1) forwards;
+
+  .placeholder-icon {
+    font-size: 40px;
+    opacity: 0.5;
   }
-  .count.zero { color: var(--zero); }
-  .count.hot { color: var(--hot); }
-  @keyframes pop { to { opacity: 1; transform: translateY(0); } }
-  @media (prefers-reduced-motion: reduce) {
-    .count { animation: none; opacity: 1; transform: none; }
-  }
-  .count-label {
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-    margin-top: 10px;
-    max-width: 240px;
-    line-height: 1.4;
-  }
-  .count-label b { color: var(--text); font-weight: 600; }
- 
-  .msg {
-    max-width: 240px;
-    color: var(--muted);
-    font-size: 12.5px;
-    line-height: 1.5;
-  }
-  .msg .icon {
-    width: 30px; height: 30px;
-    margin: 0 auto 10px;
-    color: var(--line);
-  }
-  .msg .icon svg { width: 100%; height: 100%; }
-  .msg .headline {
-    color: var(--text);
-    font-weight: 600;
+
+  .placeholder-text {
     font-size: 13px;
-    margin-bottom: 4px;
+    max-width: 220px;
   }
-  .msg.warn .icon { color: var(--warn); }
- 
-  .hidden { display: none !important; }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Refresh-Hinweis (dezent) */
+  .refresh-hint {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 4px 0 2px;
+    opacity: 0.7;
+  }
 </style>
 </head>
 <body>
- 
-  <div class="top">
-<div>
-<div class="eyebrow">Offene Tickets</div>
-<div class="contact-name" id="contactName"></div>
-</div>
-<button class="copy-btn" id="copyLog" title="Debug-Protokoll kopieren" aria-label="Debug-Protokoll kopieren">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
-</svg>
-</button>
-</div>
- 
-  <div class="stage" id="stage"></div>
- 
+
+  <!-- Leerzustand: wird angezeigt, solange kein Kontakt geladen wurde -->
+  <div id="placeholder" class="placeholder">
+    <div class="placeholder-icon">🍕</div>
+    <div class="placeholder-text">Sobald ein Kontakt ausgewählt wird, erscheinen hier die Bestelldaten.</div>
+  </div>
+
+  <!-- Hauptansicht: wird erst befüllt, wenn Kontaktdaten eintreffen -->
+  <div id="panel" class="hidden">
+    <div class="header">
+      <div class="header-row">
+        <div class="pizza-icon">🍕</div>
+        <div class="header-titles">
+          <div class="customer-name" id="customerName">—</div>
+          <div class="header-sub">Pizza Express &middot; Kundenübersicht</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Telefon -->
+      <div class="card" id="phoneCard">
+        <div class="card-label">📞 Telefonnummer</div>
+        <div class="action-row">
+          <div class="card-value" id="phoneValue">—</div>
+          <button class="call-btn" id="callBtn" type="button">📞 Anrufen</button>
+        </div>
+      </div>
+
+      <!-- Adresse -->
+      <div class="card" id="addressCard">
+        <div class="card-label">🛵 Lieferadresse</div>
+        <div class="card-value" id="addressValue">—</div>
+      </div>
+
+      <!-- Bestellverlauf -->
+      <div class="orders-section" id="ordersSection">
+        <div class="section-title">🧾 Letzte Bestellungen</div>
+        <div id="ordersList"></div>
+      </div>
+
+    </div>
+
+    <div class="refresh-hint">Kontaktdaten werden automatisch aktualisiert</div>
+  </div>
+
 <script>
-(function () {
-  "use strict";
- 
-  const log = { input: null, received: [], sent: [] };
- 
-  function send(msg) {
-    log.sent.push({ t: new Date().toISOString(), msg });
-    try { window.parent.postMessage(msg, "*"); } catch (e) {}
-  }
- 
-  const stage = document.getElementById("stage");
-  const nameEl = document.getElementById("contactName");
- 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"]/g, c =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  }
- 
-  function contactDisplayName(contact) {
-    try {
-      const n = contact.personal && contact.personal.name;
-      if (n) return n.displayName || n.fullName ||
-        [n.firstName, n.lastName].filter(Boolean).join(" ");
-    } catch (e) {}
-    return "";
-  }
- 
-  const ICON_LOCK =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-  const ICON_WARN =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17.5" r="0.6" fill="currentColor"/></svg>';
-  const ICON_EMPTY =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>';
- 
-  function showMessage(headline, body, opts) {
-    opts = opts || {};
-    nameEl.textContent = opts.name || "";
-    stage.innerHTML =
-      '<div class="msg' + (opts.warn ? ' warn' : '') + '">' +
-        '<div class="icon">' + (opts.icon || ICON_EMPTY) + '</div>' +
-        '<div class="headline">' + esc(headline) + '</div>' +
-        '<div>' + esc(body) + '</div>' +
-      '</div>';
-  }
- 
-  function showCount(n, name) {
-    nameEl.textContent = name || "";
-    const cls = n === 0 ? "zero" : (n >= 5 ? "hot" : "");
-    const sub = n === 0
-      ? "Keine offenen Vorg\u00e4nge f\u00fcr diesen Kontakt."
-      : "<b>" + esc(name || "Dieser Kontakt") + "</b> hat aktuell " +
-        (n === 1 ? "ein offenes Ticket." : n + " offene Tickets.");
-    stage.innerHTML =
-      '<div class="count ' + cls + '">' + n + '</div>' +
-      '<div class="count-label">' + sub + '</div>';
-  }
- 
-  function isSales(dept) {
-    return typeof dept === "string" && dept.trim().toLowerCase() === "sales";
-  }
- 
-  function parseTickets(raw) {
-    if (raw == null) return null;
-    const s = String(raw).trim();
-    if (s === "") return null;
-    const n = Number(s);
-    if (!Number.isFinite(n) || n < 0) return null;
-    return Math.round(n);
-  }
- 
-  function render(contact, user) {
-    const name = contactDisplayName(contact);
- 
-    const dept = user && user.department;
-    if (dept === undefined || dept === null || String(dept).trim() === "") {
-      showMessage(
-        "Abteilung nicht verf\u00fcgbar",
-        "Die Abteilung des Benutzers wird nicht mitgeliefert. Die Ticketanzeige ist nur f\u00fcr Sales vorgesehen.",
-        { warn: true, icon: ICON_WARN, name: name }
-      );
-      return;
+  (function () {
+    var placeholderEl = document.getElementById('placeholder');
+    var panelEl = document.getElementById('panel');
+
+    var customerNameEl = document.getElementById('customerName');
+
+    var phoneCardEl = document.getElementById('phoneCard');
+    var phoneValueEl = document.getElementById('phoneValue');
+    var callBtn = document.getElementById('callBtn');
+
+    var addressCardEl = document.getElementById('addressCard');
+    var addressValueEl = document.getElementById('addressValue');
+
+    var ordersSectionEl = document.getElementById('ordersSection');
+    var ordersListEl = document.getElementById('ordersList');
+
+    var currentPhone = null;
+
+    function showPlaceholder() {
+      placeholderEl.classList.remove('hidden');
+      panelEl.classList.add('hidden');
     }
-    if (!isSales(dept)) {
-      showMessage(
-        "Nur f\u00fcr Sales",
-        "Diese Ansicht ist Mitarbeitenden der Abteilung Sales vorbehalten.",
-        { icon: ICON_LOCK, name: name }
-      );
-      return;
+
+    function showPanel() {
+      placeholderEl.classList.add('hidden');
+      panelEl.classList.remove('hidden');
     }
- 
-    const raw = contact && contact.customFields && contact.customFields.custom1;
-    const tickets = parseTickets(raw);
-    if (tickets === null) {
-      showMessage(
-        "Keine Ticketdaten",
-        "F\u00fcr diesen Kontakt liegt keine Ticketanzahl vor.",
-        { icon: ICON_EMPTY, name: name }
-      );
-      return;
+
+    function setHidden(el, hidden) {
+      if (hidden) {
+        el.classList.add('hidden');
+      } else {
+        el.classList.remove('hidden');
+      }
     }
- 
-    showCount(tickets, name);
-  }
- 
-  window.addEventListener("message", event => {
-    const data = event.data || {};
-    log.received.push({ t: new Date().toISOString(), data });
-    if (!data.contact && !data.user) return;
-    log.input = data;
-    render(data.contact || {}, data.user || {});
-  });
- 
-  document.getElementById("copyLog").addEventListener("click", () => {
-    send({ type: "copyText", value: JSON.stringify(log, null, 2) });
-  });
- 
-  send({ type: "refresh" });
-})();
+
+    function buildAddress(addr) {
+      if (!addr) return '';
+      var parts = [];
+      if (addr.street) parts.push(addr.street);
+      var cityLine = [addr.postalCode, addr.city].filter(Boolean).join(' ');
+      if (cityLine) parts.push(cityLine);
+      if (addr.country) parts.push(addr.country);
+      return parts.join(', ');
+    }
+
+    function renderOrder(date, items) {
+      var card = document.createElement('div');
+      card.className = 'order-card';
+
+      var dateEl = document.createElement('div');
+      dateEl.className = 'order-date';
+      dateEl.textContent = date;
+
+      var itemsEl = document.createElement('div');
+      itemsEl.className = 'order-items';
+      itemsEl.textContent = items;
+
+      card.appendChild(dateEl);
+      card.appendChild(itemsEl);
+      return card;
+    }
+
+    function renderContact(data) {
+      if (!data || !data.contact) {
+        showPlaceholder();
+        return;
+      }
+
+      var contact = data.contact;
+      var personal = contact.personal || {};
+      var name = (personal.name && personal.name.displayName) ||
+                 (personal.name && personal.name.fullName) || '';
+
+      var phones = contact.phoneNumbers || {};
+      var phone = '';
+      if (phones.mobile) {
+        phone = phones.mobile;
+      } else if (phones.work && phones.work.length) {
+        phone = phones.work[0];
+      } else if (phones.home) {
+        phone = phones.home;
+      }
+
+      var address = buildAddress(personal.address);
+
+      var custom = contact.customFields || {};
+      var order1Date = custom.custom1 || '';
+      var order1Items = custom.custom2 || '';
+      var order2Date = custom.custom3 || '';
+      var order2Items = custom.custom4 || '';
+
+      var hasAnyData = name || phone || address || order1Items || order2Items;
+
+      if (!hasAnyData) {
+        showPlaceholder();
+        return;
+      }
+
+      showPanel();
+
+      // Name
+      customerNameEl.textContent = name || 'Unbekannter Kunde';
+
+      // Telefon
+      if (phone) {
+        phoneValueEl.textContent = phone;
+        currentPhone = phone;
+        setHidden(phoneCardEl, false);
+      } else {
+        currentPhone = null;
+        setHidden(phoneCardEl, true);
+      }
+
+      // Adresse
+      if (address) {
+        addressValueEl.textContent = address;
+        setHidden(addressCardEl, false);
+      } else {
+        setHidden(addressCardEl, true);
+      }
+
+      // Bestellungen
+      ordersListEl.innerHTML = '';
+      var orderCount = 0;
+
+      if (order1Items) {
+        ordersListEl.appendChild(renderOrder(order1Date || 'Datum unbekannt', order1Items));
+        orderCount++;
+      }
+      if (order2Items) {
+        ordersListEl.appendChild(renderOrder(order2Date || 'Datum unbekannt', order2Items));
+        orderCount++;
+      }
+
+      setHidden(ordersSectionEl, orderCount === 0);
+    }
+
+    // Eingehende Kontaktdaten empfangen
+    window.addEventListener('message', function (event) {
+      renderContact(event.data);
+    });
+
+    // Anruf-Button
+    callBtn.addEventListener('click', function () {
+      if (!currentPhone) return;
+      window.parent.postMessage({ type: 'callPhoneNumber', value: currentPhone }, '*');
+    });
+
+    // Beim Laden initial nach Daten fragen (z.B. nach Seitenwechsel im iFrame)
+    window.parent.postMessage({ type: 'refresh' }, '*');
+  })();
 </script>
+
 </body>
 </html>
